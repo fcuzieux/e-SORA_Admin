@@ -64,7 +64,7 @@ export function SoraHome() {
 
         const transformedData = data.map(study => ({
           ...study,
-          user_email: userEmailMap.get(study.user_id) || study.user_id
+          user_email: userEmailMap.get(study.user_id) || 'Email non disponible'
         }));
         setStudies(transformedData);
       } else {
