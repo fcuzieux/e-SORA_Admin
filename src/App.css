@@ -1,0 +1,38 @@
+/* Ensure the checkboxes and text boxes are aligned properly */
+.flex.items-center {
+  display: flex;
+  align-items: center;
+}
+
+.ml-4 {
+  margin-left: 1rem;
+}
+
+.mt-1 {
+  margin-top: 0.25rem;
+}
+
+.block.w-full {
+  display: block;
+  width: 100%;
+}
+
+.rounded-md {
+  border-radius: 0.375rem;
+}
+
+.border-gray-300 {
+  border-color: #d1d5db;
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.focus\\:border-blue-500:focus {
+  border-color: #3b82f6;
+}
+
+.focus\\:ring-blue-500:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
