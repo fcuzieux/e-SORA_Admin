@@ -34,45 +34,98 @@ export function SoraHome() {
     loadStudies();
   }, [user]);
 
-  const loadStudies = async () => {
-    if (!user) return;
+  // const loadStudies = async () => {
+  //   if (!user) return;
 
-    let query = supabase
-      .from('sora_studies')
-      .select('*')
-      .order('updated_at', { ascending: false });
+  //   let query = supabase
+  //     .from('sora_studies')
+  //     .select('*')
+  //     .order('updated_at', { ascending: false });
 
-    // If not super agent, only show user's own studies
-    if (!isSuperAgent) {
-      query = query.eq('user_id', user.id);
-    }
+  //   // If not super agent, only show user's own studies
+  //   if (!isSuperAgent) {
+  //     query = query.eq('user_id', user.id);
+  //   }
 
-    const { data, error } = await query;
+  //   const { data, error } = await query;
 
-    if (error) {
-      console.error('Erreur lors du chargement des études:', error);
-      setError('Erreur lors du chargement des études');
-    } else {
-      // For super agents, fetch user emails
-      if (isSuperAgent && data && data.length > 0) {
-        const userIds = [...new Set(data.map(study => study.user_id))];
-        const { data: usersData } = await supabase.auth.admin.listUsers();
+  //   if (error) {
+  //     console.error('Erreur lors du chargement des études:', error);
+  //     setError('Erreur lors du chargement des études');
+  //   } else {
+  //     // For super agents, fetch user emails
+  //     if (isSuperAgent && data && data.length > 0) {
+  //       const userIds = [...new Set(data.map(study => study.user_id))];
+  //       const { data: usersData } = await supabase.auth.admin.listUsers();
 
-        const userEmailMap = new Map(
-          usersData?.users?.map(u => [u.id, u.email]) || []
-        );
+  //       const userEmailMap = new Map(
+  //         usersData?.users?.map(u => [u.id, u.email]) || []
+  //       );
 
-        const transformedData = data.map(study => ({
-          ...study,
-          user_email: userEmailMap.get(study.user_id) || 'Email non disponible'
-        }));
-        setStudies(transformedData);
-      } else {
-        setStudies(data || []);
+  //       const transformedData = data.map(study => ({
+  //         ...study,
+  //         user_email: userEmailMap.get(study.user_id) || 'Email non disponible'
+  //       }));
+  //       setStudies(transformedData);
+  //     } else {
+  //       setStudies(data || []);
+  //     }
+  //     setError(null);
+  //   }
+  // };
+const loadStudies = async () => {
+  if (!user) return;
+
+  let query = supabase
+    .from('sora_studies')
+    .select('*')
+    .order('updated_at', { ascending: false });
+
+  // If not super agent, only show user's own studies
+  if (!isSuperAgent) {
+    query = query.eq('user_id', user.id);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Erreur lors du chargement des études:', error);
+    setError('Erreur lors du chargement des études');
+  } else {
+
+    // For super agents, fetch user emails
+    if (isSuperAgent && data && data.length > 0) {
+      const userIds = [...new Set(data.map(study => study.user_id))];
+      const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
+
+      if (usersError) {
+        console.error('Erreur lors du chargement des utilisateurs:', usersError);
+        setError('Erreur lors du chargement des utilisateurs');
+        return;
       }
-      setError(null);
+
+      console.log('Users Data:', usersData); // Debug statement
+
+      const userEmailMap = new Map(
+        usersData?.users?.map(u => [u.id, u.email]) || []
+      );
+
+      console.log('User Email Map:', userEmailMap); // Debug statement
+
+      const transformedData = data.map(study => ({
+        ...study,
+        user_email: userEmailMap.get(study.user_id) || 'Email non disponible'
+      }));
+
+      console.log('Transformed Data:', transformedData); // Debug statement
+
+      setStudies(transformedData);
+    } else {
+      setStudies(data || []);
     }
-  };
+    setError(null);
+  }
+};
 
   const handleNewEvaluation = () => {
     setIsDialogOpen(true);
