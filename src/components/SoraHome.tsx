@@ -23,7 +23,7 @@ interface SavedStudy {
 export function SoraHome() {
   const navigate = useNavigate();
   const { setStudyName, setFormData, setStudyId } = useStudyContext();
-  const { user, isSuperAgent } = useAuth();
+  const { user, isSuperAgent, loading: authLoading  } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [studyToDelete, setStudyToDelete] = useState<SavedStudy | null>(null);
@@ -31,13 +31,23 @@ export function SoraHome() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('isSuperAgent:', isSuperAgent); // Debug statement
+    if (!authLoading) {
+      console.log('isSuperAgent:', isSuperAgent); // Debug statement
+      setLoading(false);
+    }
+  }, [authLoading, isSuperAgent]);
 
-    loadStudies();
-  }, [user, isSuperAgent]);
+  useEffect(() => {
+    if (!loading) {
+      loadStudies();
+    }
+  }, [user, isSuperAgent, loading]);
 
   const loadStudies = async () => {
     if (!user) return;
+
+    console.log('isSuperAgent in loadStudies:', isSuperAgent); // Debug statement
+
 
     let query = supabase
       .from('sora_studies')
