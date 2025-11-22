@@ -104,7 +104,7 @@ export function AdminPanel() {
         setDebug(JSON.stringify({ studyCounts: studyCounts ?? null, studyCountsError }, null, 2));
         throw studyCountsError;
       }
-
+      console.log('Study counts:', studyCounts);
       const studyCountMap = new Map(studyCounts.map((study: any) => [study.user_id, study.count]));
 
       // Combine user data with roles and study counts
