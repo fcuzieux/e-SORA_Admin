@@ -272,6 +272,7 @@ if (!isAdmin) {
             >
               <div>
                 <h3 className="font-medium">{userItem.email}</h3>
+                <h3 className="font-medium">{userItem.id}</h3>
                 <p className="text-sm text-gray-500">
                   Créé le : {new Date(userItem.created_at).toLocaleDateString()}
                 </p>
