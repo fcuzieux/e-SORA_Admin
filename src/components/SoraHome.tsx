@@ -18,17 +18,16 @@ interface SavedStudy {
   user_email?: string;
 }
 
-//TESTCHANGE
-
 export function SoraHome() {
   const navigate = useNavigate();
   const { setStudyName, setFormData, setStudyId } = useStudyContext();
-  const { user, isSuperAgent, loading: authLoading  } = useAuth();
+  const { user, isSuperAgent, loading: authLoading } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [studyToDelete, setStudyToDelete] = useState<SavedStudy | null>(null);
   const [studies, setStudies] = useState<SavedStudy[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!authLoading) {
@@ -48,7 +47,6 @@ export function SoraHome() {
 
     console.log('isSuperAgent in loadStudies:', isSuperAgent); // Debug statement
 
-
     let query = supabase
       .from('sora_studies')
       .select('*')
@@ -56,7 +54,6 @@ export function SoraHome() {
 
     // If not super agent, only show user's own studies
     if (!isSuperAgent) {
-      console.log('Not super agent, filtering studies by user ID:', user.id);
       query = query.eq('user_id', user.id);
     }
 
@@ -68,9 +65,8 @@ export function SoraHome() {
     } else {
       // For super agents, fetch user emails
       if (isSuperAgent && data && data.length > 0) {
-      console.log('Super agent mode for user ID:', user.id);
         const userIds = [...new Set(data.map(study => study.user_id))];
-        const { data: usersData, error: usersError  } = await supabase.auth.admin.listUsers();
+        const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
 
         if (usersError) {
           console.error('Erreur lors du chargement des utilisateurs:', usersError);
@@ -79,7 +75,6 @@ export function SoraHome() {
         }
 
         console.log('Users Data:', usersData); // Debug statement
-
 
         const userEmailMap = new Map(
           usersData?.users?.map(u => [u.id, u.email]) || []
@@ -91,6 +86,9 @@ export function SoraHome() {
           ...study,
           user_email: userEmailMap.get(study.user_id) || 'Email non disponible'
         }));
+
+        console.log('Transformed Data:', transformedData); // Debug statement
+
         setStudies(transformedData);
       } else {
         setStudies(data || []);
@@ -146,9 +144,9 @@ export function SoraHome() {
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <LogoutButton />
       <div className="flex flex-col items-center mb-8">
-        <img 
+        <img
           src={LogoCedFrance}
-          alt="Centres d'Essais Drones France" 
+          alt="Centres d'Essais Drones France"
           className="w-64 h-auto mb-6"
         />
         {user && (
@@ -161,24 +159,21 @@ export function SoraHome() {
             <Plane className="w-8 h-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">
               Évaluation SORA
-                {isSuperAgent ? (
-                  <span className="text-lg text-blue-600 ml-2">(Mode Super Agent)</span>
-                ) : (
-                  <span className="text-lg text-blue-600 ml-2">(Mode Utilisateur)</span>
-                )}
+              {isSuperAgent ? (
+                <span className="text-lg text-blue-600 ml-2">(Mode Super Agent)</span>
+              ) : (
+                <span className="text-lg text-blue-600 ml-2">(Mode Utilisateur)</span>
+              )}
             </h1>
           </div>
-          
-          {/* {isSuperAgent ? ( */}
-            <button
-              onClick={() => navigate('/admin')}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
-            >
-              <Shield className="w-5 h-5" />
-              Administrateur 
-            </button>
-           {/* ) : null} */}
-          
+
+          <button
+            onClick={() => navigate('/admin')}
+            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
+          >
+            <Shield className="w-5 h-5" />
+            Administrateur
+          </button>
 
           <button
             onClick={handleNewEvaluation}
@@ -200,7 +195,7 @@ export function SoraHome() {
         <h2 className="text-xl font-semibold mb-4">
           {isSuperAgent ? 'Toutes les évaluations SORA' : 'Mes évaluations SORA'}
         </h2>
-        
+
         <div className="space-y-4">
           {studies.length > 0 ? (
             studies.map((study) => (
@@ -219,7 +214,7 @@ export function SoraHome() {
                     Dernière modification : {new Date(study.updated_at).toLocaleDateString()}
                   </p>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleEditEvaluation(study)}
