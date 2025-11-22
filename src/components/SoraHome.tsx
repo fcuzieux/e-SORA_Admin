@@ -31,8 +31,10 @@ export function SoraHome() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('isSuperAgent:', isSuperAgent); // Debug statement
+
     loadStudies();
-  }, [user]);
+  }, [user, isSuperAgent]);
 
   const loadStudies = async () => {
     if (!user) return;
@@ -58,11 +60,22 @@ export function SoraHome() {
       if (isSuperAgent && data && data.length > 0) {
       console.log('Super agent mode for user ID:', user.id);
         const userIds = [...new Set(data.map(study => study.user_id))];
-        const { data: usersData } = await supabase.auth.admin.listUsers();
+        const { data: usersData, error: usersError  } = await supabase.auth.admin.listUsers();
+
+        if (usersError) {
+          console.error('Erreur lors du chargement des utilisateurs:', usersError);
+          setError('Erreur lors du chargement des utilisateurs');
+          return;
+        }
+
+        console.log('Users Data:', usersData); // Debug statement
+
 
         const userEmailMap = new Map(
           usersData?.users?.map(u => [u.id, u.email]) || []
         );
+
+        console.log('User Email Map:', userEmailMap); // Debug statement
 
         const transformedData = data.map(study => ({
           ...study,
