@@ -44,6 +44,7 @@ export function SoraHome() {
 
     // If not super agent, only show user's own studies
     if (!isSuperAgent) {
+      console.log('Not super agent, filtering studies by user ID:', user.id);
       query = query.eq('user_id', user.id);
     }
 
@@ -55,6 +56,7 @@ export function SoraHome() {
     } else {
       // For super agents, fetch user emails
       if (isSuperAgent && data && data.length > 0) {
+      console.log('Super agent mode for user ID:', user.id);
         const userIds = [...new Set(data.map(study => study.user_id))];
         const { data: usersData } = await supabase.auth.admin.listUsers();
 
