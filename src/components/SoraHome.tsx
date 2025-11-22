@@ -65,31 +65,35 @@ export function SoraHome() {
     } else {
       // For super agents, fetch user emails
       if (isSuperAgent && data && data.length > 0) {
-        const userIds = [...new Set(data.map(study => study.user_id))];
-        const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
+        try {
+          const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
 
-        if (usersError) {
-          console.error('Erreur lors du chargement des utilisateurs:', usersError);
+          if (usersError) {
+            console.error('Erreur lors du chargement des utilisateurs:', usersError);
+            setError('Erreur lors du chargement des utilisateurs');
+            return;
+          }
+
+          console.log('Users Data:', usersData); // Debug statement
+
+          const userEmailMap = new Map(
+            usersData?.users?.map(u => [u.id, u.email]) || []
+          );
+
+          console.log('User Email Map:', userEmailMap); // Debug statement
+
+          const transformedData = data.map(study => ({
+            ...study,
+            user_email: userEmailMap.get(study.user_id) || 'Email non disponible'
+          }));
+
+          console.log('Transformed Data:', transformedData); // Debug statement
+
+          setStudies(transformedData);
+        } catch (error) {
+          console.error('Erreur lors du chargement des utilisateurs:', error);
           setError('Erreur lors du chargement des utilisateurs');
-          return;
         }
-
-        console.log('Users Data:', usersData); // Debug statement
-
-        const userEmailMap = new Map(
-          usersData?.users?.map(u => [u.id, u.email]) || []
-        );
-
-        console.log('User Email Map:', userEmailMap); // Debug statement
-
-        const transformedData = data.map(study => ({
-          ...study,
-          user_email: userEmailMap.get(study.user_id) || 'Email non disponible'
-        }));
-
-        console.log('Transformed Data:', transformedData); // Debug statement
-
-        setStudies(transformedData);
       } else {
         setStudies(data || []);
       }
