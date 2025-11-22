@@ -9,6 +9,7 @@ interface UserWithRole {
   email: string;
   role: string;
   created_at: string;
+  studyCount: number; // Add studyCount to the interface
 }
 
 export function AdminPanel() {
@@ -93,14 +94,28 @@ export function AdminPanel() {
         throw rolesError;
       }
 
-      // Combine user data with roles
+      // Get the count of studies for each user
+      const { data: studyCounts, error: studyCountsError } = await supabase
+        .from('sora_studies')
+        .select('user_id', { count: 'exact' });
+
+      if (studyCountsError) {
+        console.error('Erreur en récupérant le nombre d\'études par utilisateur:', studyCountsError);
+        setDebug(JSON.stringify({ studyCounts: studyCounts ?? null, studyCountsError }, null, 2));
+        throw studyCountsError;
+      }
+
+      const studyCountMap = new Map(studyCounts.map((study: any) => [study.user_id, study.count]));
+
+      // Combine user data with roles and study counts
       const usersWithRoles = (usersData || []).map((authUser: any) => {
         const userRole = (rolesData || []).find((role: any) => role.user_id === authUser.id);
         return {
           id: authUser.id,
           email: authUser.email || 'Email non disponible',
           role: userRole?.role || 'user',
-          created_at: authUser.created_at || new Date().toISOString()
+          created_at: authUser.created_at || new Date().toISOString(),
+          studyCount: studyCountMap.get(authUser.id) || 0
         };
       });
 
@@ -116,75 +131,55 @@ export function AdminPanel() {
       setLoading(false);
     }
   };
-const updateUserRole = async (userId: string, newRole: string) => {
-  try {
-    // Check if the user role already exists
-    const { data: existingRole, error: checkError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      throw checkError;
-    }
-
-    if (existingRole) {
-      // Update the existing role
-      const { error: updateError } = await supabase
+  const updateUserRole = async (userId: string, newRole: string) => {
+    try {
+      // Check if the user role already exists
+      const { data: existingRole, error: checkError } = await supabase
         .from('user_roles')
-        .update({
-          role: newRole,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
+        .select('*')
+        .eq('user_id', userId)
+        .single();
 
-      if (updateError) throw updateError;
-    } else {
-      // Insert a new role
-      const { error: insertError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: newRole,
-          updated_at: new Date().toISOString()
-        });
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
 
-      if (insertError) throw insertError;
+      if (existingRole) {
+        // Update the existing role
+        const { error: updateError } = await supabase
+          .from('user_roles')
+          .update({
+            role: newRole,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+
+        if (updateError) throw updateError;
+      } else {
+        // Insert a new role
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: newRole,
+            updated_at: new Date().toISOString()
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      // Update local state
+      setUsers(users.map(u =>
+        u.id === userId ? { ...u, role: newRole } : u
+      ));
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du rôle:', error);
+      setError('Erreur lors de la mise à jour du rôle');
     }
+  };
 
-    // Update local state
-    setUsers(users.map(u =>
-      u.id === userId ? { ...u, role: newRole } : u
-    ));
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour du rôle:', error);
-    setError('Erreur lors de la mise à jour du rôle');
-  }
-};
-  // const updateUserRole = async (userId: string, newRole: string) => {
-  //   try {
-  //     const { error } = await supabase
-  //       .from('user_roles')
-  //       .upsert({
-  //         user_id: userId,
-  //         role: newRole,
-  //         updated_at: new Date().toISOString()
-  //       });
-
-  //     if (error) throw error;
-
-  //     // Update local state
-  //     setUsers(users.map(u => 
-  //       u.id === userId ? { ...u, role: newRole } : u
-  //     ));
-  //   } catch (error) {
-  //     console.error('Erreur lors de la mise à jour du rôle:', error);
-  //     setError('Erreur lors de la mise à jour du rôle');
-  //   }
-  // };
-
-if (!isAdmin) {
+  if (!isAdmin) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="bg-red-100 text-red-700 p-4 rounded-lg">
@@ -263,7 +258,7 @@ if (!isAdmin) {
           <Users className="w-6 h-6" />
           Gestion des Utilisateurs
         </h2>
-        
+
         <div className="space-y-4">
           {users.map((userItem) => (
             <div
@@ -276,6 +271,9 @@ if (!isAdmin) {
                 <p className="text-sm text-gray-500">
                   Créé le : {new Date(userItem.created_at).toLocaleDateString()}
                 </p>
+                <p className="text-sm text-gray-500">
+                  Nombre d'études : {userItem.studyCount}
+                </p>
                 <span className={`inline-block px-2 py-1 rounded-full text-xs ${
                   userItem.role === 'admin' ? 'bg-red-100 text-red-800' :
                   userItem.role === 'super_agent' ? 'bg-blue-100 text-blue-800' :
@@ -286,7 +284,7 @@ if (!isAdmin) {
                    'Utilisateur'}
                 </span>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <select
                   value={userItem.role}

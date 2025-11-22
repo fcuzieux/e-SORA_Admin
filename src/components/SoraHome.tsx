@@ -21,17 +21,22 @@ interface SavedStudy {
 export function SoraHome() {
   const navigate = useNavigate();
   const { setStudyName, setFormData, setStudyId } = useStudyContext();
-  const { user, isSuperAgent, loading: authLoading } = useAuth();
+  const { user, isAdmin, isSuperAgent, loading: authLoading } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [studyToDelete, setStudyToDelete] = useState<SavedStudy | null>(null);
   const [studies, setStudies] = useState<SavedStudy[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [debug, setDebug] = useState<string | null>(null); // <-- nouvel état pour infos de debug
+  // Nouveau: état pour info utilisateur courant
+  const [currentUserInfo, setCurrentUserInfo] = useState<any>(null);
+  const [currentUserLoading, setCurrentUserLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
       console.log('isSuperAgent:', isSuperAgent); // Debug statement
+      fetchCurrentUserInfo();
       setLoading(false);
     }
   }, [authLoading, isSuperAgent]);
@@ -41,7 +46,91 @@ export function SoraHome() {
       loadStudies();
     }
   }, [user, isSuperAgent, loading]);
+  // Nouveau: récupère et combine user Supabase + ligne user_roles
+  const fetchCurrentUserInfo = async () => {
+    setCurrentUserLoading(true);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('supabase.auth.getUser error:', userError);
+        setDebug(prev => prev ?? JSON.stringify({ userError }, null, 2));
+      }
+      const current = userData?.user ?? user;
 
+      // Cherche la ligne de rôle dans la table user_roles (maybeSingle pour ne pas throw si absent)
+      const { data: roleRow, error: roleError } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', current?.id)
+        .maybeSingle();
+
+      if (roleError) {
+        console.error('Erreur en récupérant user_roles pour current user:', roleError);
+        setDebug(prev => prev ?? JSON.stringify({ roleError }, null, 2));
+      }
+
+      setCurrentUserInfo({
+        user: current ?? null,
+        roleRow: roleRow ?? null,
+        derivedIsAdmin: (current?.id && roleRow?.role === 'admin') || !!isAdmin
+      });
+    } catch (err: any) {
+      console.error('fetchCurrentUserInfo:', err);
+      setDebug(prev => prev ?? (typeof err === 'object' ? JSON.stringify(err, Object.getOwnPropertyNames(err), 2) : String(err)));
+    } finally {
+      setCurrentUserLoading(false);
+    }
+  };
+
+  const loadUsers = async () => {
+    setLoading(true);
+    setError(null);
+    setDebug(null);
+    try {
+      // Get all user emails using the admin function
+      const { data: usersData, error: usersError } = await supabase
+        .rpc('get_user_emails');
+
+      if (usersError) {
+        console.error('Erreur en récupérant les emails utilisateurs:', usersError);
+        setDebug(JSON.stringify({ usersData: usersData ?? null, usersError }, null, 2));
+        throw usersError;
+      }
+
+      // Get all users with roles from user_roles table
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('*');
+
+      if (rolesError) {
+        console.error('Erreur en récupérant user_roles:', rolesError);
+        setDebug(JSON.stringify({ rolesData: rolesData ?? null, rolesError }, null, 2));
+        throw rolesError;
+      }
+
+      // Combine user data with roles
+      const usersWithRoles = (usersData || []).map((authUser: any) => {
+        const userRole = (rolesData || []).find((role: any) => role.user_id === authUser.id);
+        return {
+          id: authUser.id,
+          email: authUser.email || 'Email non disponible',
+          role: userRole?.role || 'user',
+          created_at: authUser.created_at || new Date().toISOString()
+        };
+      });
+
+      setUsers(usersWithRoles);
+      setDebug(JSON.stringify({ usersCount: usersWithRoles.length }, null, 2));
+    } catch (err: any) {
+      console.error('Erreur lors du chargement des utilisateurs:', err);
+      setError(err?.message ? `Erreur: ${err.message}` : 'Erreur lors du chargement des utilisateurs');
+      if (!debug) {
+        try { setDebug(JSON.stringify(err, Object.getOwnPropertyNames(err), 2)); } catch { setDebug(String(err)); }
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
   const loadStudies = async () => {
     if (!user) return;
 
