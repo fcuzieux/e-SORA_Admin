@@ -94,18 +94,25 @@ export function AdminPanel() {
         throw rolesError;
       }
 
-      // Get the count of studies for each user
-      const { data: studyCounts, error: studyCountsError } = await supabase
+      // Get all studies to calculate count per user
+      const { data: allStudies, error: studiesError } = await supabase
         .from('sora_studies')
-        .select('user_id', { count: 'exact' });
+        .select('user_id');
+        console.log('Study counts:', allStudies);
 
-      if (studyCountsError) {
-        console.error('Erreur en récupérant le nombre d\'études par utilisateur:', studyCountsError);
-        setDebug(JSON.stringify({ studyCounts: studyCounts ?? null, studyCountsError }, null, 2));
-        throw studyCountsError;
+      if (studiesError) {
+        console.error('Erreur en récupérant les études:', studiesError);
+        setDebug(JSON.stringify({ allStudies: allStudies ?? null, studiesError }, null, 2));
+        throw studiesError;
       }
-      console.log('Study counts:', studyCounts);
-      const studyCountMap = new Map(studyCounts.map((study: any) => [study.user_id, study.count]));
+
+      // Calculate counts by user_id locally
+      const studyCountMap = new Map<string, number>();
+      allStudies?.forEach((study: any) => {
+        if (study.user_id) {
+          studyCountMap.set(study.user_id, (studyCountMap.get(study.user_id) || 0) + 1);
+        }
+      });
 
       // Combine user data with roles and study counts
       const usersWithRoles = (usersData || []).map((authUser: any) => {
@@ -274,14 +281,13 @@ export function AdminPanel() {
                 <p className="text-sm text-gray-500">
                   Nombre d'études : {userItem.studyCount}
                 </p>
-                <span className={`inline-block px-2 py-1 rounded-full text-xs ${
-                  userItem.role === 'admin' ? 'bg-red-100 text-red-800' :
+                <span className={`inline-block px-2 py-1 rounded-full text-xs ${userItem.role === 'admin' ? 'bg-red-100 text-red-800' :
                   userItem.role === 'super_agent' ? 'bg-blue-100 text-blue-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                    'bg-gray-100 text-gray-800'
+                  }`}>
                   {userItem.role === 'admin' ? 'Administrateur' :
-                   userItem.role === 'super_agent' ? 'Super Agent' :
-                   'Utilisateur'}
+                    userItem.role === 'super_agent' ? 'Super Agent' :
+                      'Utilisateur'}
                 </span>
               </div>
 
