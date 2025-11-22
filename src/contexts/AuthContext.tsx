@@ -29,12 +29,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select('role')
         .eq('user_id', userId)
         .single();
-      
+
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching user role:', error);
         return 'user';
       }
-      
+
       return data?.role || 'user';
     } catch (error) {
       console.error('Error fetching user role:', error);
@@ -57,8 +57,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Écouter les changements d'auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      const handleAuthChange = async () => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          const role = await fetchUserRole(session.user.id);
+          setUserRole(role as UserRole);
+        } else {
+          setUserRole('user');
+        }
+        setLoading(false);
+      };
+      handleAuthChange();
     });
 
     return () => subscription.unsubscribe();
@@ -70,8 +79,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ 
-      email, 
+    const { error } = await supabase.auth.signUp({
+      email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`
@@ -90,15 +99,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = userRole === 'admin';
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      userRole, 
-      loading, 
-      signIn, 
-      signUp, 
-      signOut, 
-      isSuperAgent, 
-      isAdmin 
+    <AuthContext.Provider value={{
+      user,
+      userRole,
+      loading,
+      signIn,
+      signUp,
+      signOut,
+      isSuperAgent,
+      isAdmin
     }}>
       {children}
     </AuthContext.Provider>

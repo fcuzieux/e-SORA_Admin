@@ -155,7 +155,8 @@ export function SoraHome() {
       // For super agents, fetch user emails
       if (isSuperAgent && data && data.length > 0) {
         try {
-          const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
+          const { data: usersData, error: usersError } = await supabase
+            .rpc('get_user_emails');
 
           if (usersError) {
             console.error('Erreur lors du chargement des utilisateurs:', usersError);
@@ -166,7 +167,7 @@ export function SoraHome() {
           console.log('Users Data:', usersData); // Debug statement
 
           const userEmailMap = new Map(
-            usersData?.users?.map(u => [u.id, u.email]) || []
+            (usersData || []).map((u: any) => [u.id, u.email])
           );
 
           console.log('User Email Map:', userEmailMap); // Debug statement
