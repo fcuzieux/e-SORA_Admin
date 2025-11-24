@@ -65,7 +65,7 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
   };
 
   return (
-    <div className="fixed bottom-8 right-8 flex flex-col items-end">
+    <div className="fixed bottom-3 left-8 flex flex-col items-end">
       {error && (
         <div className="mb-2 p-3 bg-red-100 text-red-700 rounded-lg max-w-md">
           {error}
@@ -74,11 +74,10 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
       <button
         onClick={handleSave}
         disabled={saving || !studyName || !user}
-        className={`flex items-center gap-2 px-6 py-3 rounded-full shadow-lg transition-all transform hover:scale-105 ${
-          saving || !user
+        className={`flex items-center gap-2 px-6 py-3 rounded-full shadow-lg transition-all transform hover:scale-105 ${saving || !user
             ? 'bg-gray-300 cursor-not-allowed'
             : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-xl'
-        } ${className}`}
+          } ${className}`}
       >
         <Save className="w-5 h-5" />
         <span className="font-medium">

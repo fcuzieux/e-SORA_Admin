@@ -16,15 +16,17 @@ export function OperatorForm({ operator, onChange }: OperatorFormProps) {
     operationalContact: !operator.operationalContact.trim(),
     address: !operator.address.trim(),
     phone: !operator.phone.trim(),
-    email: !operator.email.trim()
+    email: !operator.email.trim(),
+    startDate: !operator.startDate,
+    endDate: !operator.endDate,
+    locations: !operator.locations?.trim()
   }), [operator]);
 
   const getInputClassName = (fieldName: keyof typeof errors) => {
-    return `mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 ${
-      errors[fieldName] 
-        ? 'border-red-300 focus:border-red-500 bg-red-50' 
-        : 'border-gray-300 focus:border-blue-500'
-    }`;
+    return `mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 ${errors[fieldName]
+      ? 'border-red-300 focus:border-red-500 bg-red-50'
+      : 'border-gray-300 focus:border-blue-500'
+      }`;
   };
 
   const getLabelClassName = (fieldName: keyof typeof errors) => {
@@ -35,7 +37,7 @@ export function OperatorForm({ operator, onChange }: OperatorFormProps) {
     <div className="space-y-8">
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Informations sur l'exploitant</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={getLabelClassName('name')}>
@@ -139,47 +141,47 @@ export function OperatorForm({ operator, onChange }: OperatorFormProps) {
 
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Résumé de l'opération UAS</h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Date prévue pour le début de l'opération
+            <label className={getLabelClassName('startDate')}>
+              Date prévue pour le début de l'opération *
             </label>
-            <div className="mt-1 relative">
+            <div className="relative">
               <input
                 type="date"
                 value={operator.startDate || ''}
                 onChange={(e) => onChange({ ...operator, startDate: e.target.value })}
-                className="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className={`${getInputClassName('startDate')} pr-10`}
               />
-              <Calendar className="absolute right-3 top-2 h-5 w-5 text-gray-400" />
+              <Calendar className="absolute right-3 top-3 h-5 w-5 text-gray-400" />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className={getLabelClassName('endDate')}>
               Date de fin prévue
             </label>
-            <div className="mt-1 relative">
+            <div className="relative">
               <input
                 type="date"
                 value={operator.endDate || ''}
                 onChange={(e) => onChange({ ...operator, endDate: e.target.value })}
-                className="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className={`${getInputClassName('endDate')} pr-10`}
               />
-              <Calendar className="absolute right-3 top-2 h-5 w-5 text-gray-400" />
+              <Calendar className="absolute right-3 top-3 h-5 w-5 text-gray-400" />
             </div>
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className={getLabelClassName('locations')}>
               Lieu(x) prévu(s) pour l'opération
             </label>
             <textarea
               value={operator.locations || ''}
               onChange={(e) => onChange({ ...operator, locations: e.target.value })}
               rows={3}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('locations')}
               placeholder="Saisissez les lieux prévus pour l'opération..."
             />
           </div>
