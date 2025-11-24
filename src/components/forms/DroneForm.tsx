@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { DroneInfo, DroneClass, UasType } from '../../types/sora';
 import { Tooltip } from '../common/Tooltip';
 import { Upload, ChevronDown, ChevronUp } from 'lucide-react';
@@ -10,6 +10,34 @@ interface DroneFormProps {
 
 const droneClasses: DroneClass[] = ['Sans', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'Prototype'];
 const uasTypes: UasType[] = ['Avion', 'Hélicoptère', 'Multirotor', 'Hybride/VTOL', 'Plus léger que l\'air', 'Autre'];
+
+const FilePreview = ({ file }: { file: File }) => {
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!file.type.startsWith('image/')) {
+      setPreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  if (!preview) return null;
+
+  return (
+    <div className="flex justify-center bg-gray-100 rounded-lg p-2 mb-2">
+      <img
+        src={preview}
+        alt={file.name}
+        className="max-h-40 object-contain rounded"
+      />
+    </div>
+  );
+};
 
 export function DroneForm({ drone, onChange }: DroneFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -129,7 +157,7 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".pdf"
+              accept=".png, .jpg, .jpeg"
               onChange={handleFileChange}
               className="hidden"
               multiple
@@ -140,28 +168,78 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             >
               <Upload className="w-5 h-5 text-gray-400" />
               <span className="text-gray-600">
-                Déposer des fichiers PDF ici ou cliquer pour parcourir
+                Déposer des fichiers image(.png, .jpg, .jpeg) ici ou cliquer pour parcourir
               </span>
             </div>
           </div>
           {drone.technicalDocuments && drone.technicalDocuments.length > 0 && (
             <div className="mt-2 space-y-2">
               {drone.technicalDocuments.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span className="text-sm text-gray-600">{file.name}</span>
-                  <button
-                    onClick={() => handleRemoveFile(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    Supprimer
-                  </button>
+                <div key={index} className="p-2 bg-gray-50 rounded border border-gray-200">
+                  <FilePreview file={file} />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-sm text-gray-600 truncate max-w-[200px]">{file.name}</span>
+                    <button
+                      onClick={() => handleRemoveFile(index)}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
 
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Dimensions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Longueur (m)</label>
+              <input
+                type="number"
+                value={drone.dimensions.length}
+                min={0}
+                onChange={(e) => onChange({
+                  ...drone,
+                  dimensions: { ...drone.dimensions, length: parseFloat(e.target.value) }
+                })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Largeur (m)</label>
+              <input
+                type="number"
+                value={drone.dimensions.width}
+                min={0}
+                onChange={(e) => onChange({
+                  ...drone,
+                  dimensions: { ...drone.dimensions, width: parseFloat(e.target.value) }
+                })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Hauteur (m)</label>
+              <input
+                type="number"
+                value={drone.dimensions.height}
+                min={0}
+                onChange={(e) => onChange({
+                  ...drone,
+                  dimensions: { ...drone.dimensions, height: parseFloat(e.target.value) }
+                })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        </div>
         <div>
+          <div> &nbsp;</div>
           <Tooltip text={
             <div>
               Exemples de dimensions caractéristiques maximales de l'UA :
@@ -266,6 +344,122 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
           </select>
         </div>
       </div>
+
+      <div className="space-y-4">
+        <h4 className="text-lg font-medium">Limitations environnementales</h4>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Vitesse maximale du vent au décollage (m/s)
+            </label>
+            <input
+              type="number"
+              value={drone.environmentalLimitations.maxWindSpeedTakeoff}
+              onChange={(e) => onChange({
+                ...drone,
+                environmentalLimitations: {
+                  ...drone.environmentalLimitations,
+                  maxWindSpeedTakeoff: parseFloat(e.target.value)
+                }
+              })}
+              min={0}
+              max={drone.maxSpeed}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+
+
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Vitesse maximale de tenue à la rafale en évolution (m/s)
+            </label>
+            <input
+              type="number"
+              value={drone.environmentalLimitations.maxGustSpeed}
+              onChange={(e) => onChange({
+                ...drone,
+                environmentalLimitations: {
+                  ...drone.environmentalLimitations,
+                  maxGustSpeed: parseFloat(e.target.value)
+                }
+              })}
+              min={drone.environmentalLimitations.maxWindSpeedTakeoff}
+              max={drone.maxSpeed}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Température [Min] (°C)</label>
+            <input
+              type="number"
+              value={drone.environmentalLimitations.minTemperature}
+              onChange={(e) => onChange({
+                ...drone,
+                environmentalLimitations: {
+                  ...drone.environmentalLimitations,
+                  minTemperature: parseFloat(e.target.value)
+                }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Température [Max] (°C)</label>
+            <input
+              type="number"
+              value={drone.environmentalLimitations.maxTemperature}
+              onChange={(e) => onChange({
+                ...drone,
+                environmentalLimitations: {
+                  ...drone.environmentalLimitations,
+                  maxTemperature: parseFloat(e.target.value)
+                }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Visibilité</label>
+            <input
+              type="number"
+              value={drone.environmentalLimitations.visibility}
+              onChange={(e) => onChange({
+                ...drone,
+                environmentalLimitations: {
+                  ...drone.environmentalLimitations,
+                  visibility: parseFloat(e.target.value)
+                }
+              })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">Autres limitations</label>
+            <textarea
+              value={drone.environmentalLimitations.otherLimitations}
+              onChange={(e) => onChange({
+                ...drone,
+                environmentalLimitations: {
+                  ...drone.environmentalLimitations,
+                  otherLimitations: e.target.value
+                }
+              })}
+              rows={3}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
 
       <div className="space-y-6">
         <div className="flex items-center justify-between cursor-pointer" onClick={() => setShowTechnicalRequirements(!showTechnicalRequirements)}>
@@ -430,182 +624,23 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Indice de Protection (IP)</label>
+              <input
+                type="text"
+                value={drone.environmentalLimitations.ipRating}
+                onChange={(e) => onChange({
+                  ...drone,
+                  environmentalLimitations: {
+                    ...drone.environmentalLimitations,
+                    ipRating: e.target.value
+                  }
+                })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
           </div>
         )}
-      </div>
-
-      <div className="space-y-4">
-        <h4 className="text-lg font-medium">Limitations environnementales</h4>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Vitesse maximale du vent au décollage (m/s)
-            </label>
-            <input
-              type="number"
-              value={drone.environmentalLimitations.maxWindSpeedTakeoff}
-              onChange={(e) => onChange({
-                ...drone,
-                environmentalLimitations: {
-                  ...drone.environmentalLimitations,
-                  maxWindSpeedTakeoff: parseFloat(e.target.value)
-                }
-              })}
-              min={0}
-              max={drone.maxSpeed}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-
-
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Vitesse maximale de tenue à la rafale en évolution (m/s)
-            </label>
-            <input
-              type="number"
-              value={drone.environmentalLimitations.maxGustSpeed}
-              onChange={(e) => onChange({
-                ...drone,
-                environmentalLimitations: {
-                  ...drone.environmentalLimitations,
-                  maxGustSpeed: parseFloat(e.target.value)
-                }
-              })}
-              min={drone.environmentalLimitations.maxWindSpeedTakeoff}
-              max={drone.maxSpeed}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Température [Min] (°C)</label>
-            <input
-              type="number"
-              value={drone.environmentalLimitations.minTemperature}
-              onChange={(e) => onChange({
-                ...drone,
-                environmentalLimitations: {
-                  ...drone.environmentalLimitations,
-                  minTemperature: parseFloat(e.target.value)
-                }
-              })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Température [Max] (°C)</label>
-            <input
-              type="number"
-              value={drone.environmentalLimitations.maxTemperature}
-              onChange={(e) => onChange({
-                ...drone,
-                environmentalLimitations: {
-                  ...drone.environmentalLimitations,
-                  maxTemperature: parseFloat(e.target.value)
-                }
-              })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Visibilité</label>
-            <input
-              type="number"
-              value={drone.environmentalLimitations.visibility}
-              onChange={(e) => onChange({
-                ...drone,
-                environmentalLimitations: {
-                  ...drone.environmentalLimitations,
-                  visibility: parseFloat(e.target.value)
-                }
-              })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Indice de Protection (IP)</label>
-            <input
-              type="text"
-              value={drone.environmentalLimitations.ipRating}
-              onChange={(e) => onChange({
-                ...drone,
-                environmentalLimitations: {
-                  ...drone.environmentalLimitations,
-                  ipRating: e.target.value
-                }
-              })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Autres limitations</label>
-            <textarea
-              value={drone.environmentalLimitations.otherLimitations}
-              onChange={(e) => onChange({
-                ...drone,
-                environmentalLimitations: {
-                  ...drone.environmentalLimitations,
-                  otherLimitations: e.target.value
-                }
-              })}
-              rows={3}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-      </div>
-
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium">Dimensions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Longueur (m)</label>
-            <input
-              type="number"
-              value={drone.dimensions.length}
-              onChange={(e) => onChange({
-                ...drone,
-                dimensions: { ...drone.dimensions, length: parseFloat(e.target.value) }
-              })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Largeur (m)</label>
-            <input
-              type="number"
-              value={drone.dimensions.width}
-              onChange={(e) => onChange({
-                ...drone,
-                dimensions: { ...drone.dimensions, width: parseFloat(e.target.value) }
-              })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Hauteur (m)</label>
-            <input
-              type="number"
-              value={drone.dimensions.height}
-              onChange={(e) => onChange({
-                ...drone,
-                dimensions: { ...drone.dimensions, height: parseFloat(e.target.value) }
-              })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-        </div>
       </div>
     </div >
   );
