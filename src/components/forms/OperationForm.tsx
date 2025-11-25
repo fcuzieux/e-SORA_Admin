@@ -4,6 +4,8 @@ import {
   OperationInfo,
   OperationType,
   DangerousGoods,
+  DroppingMaterials,
+  ControlMultipleDrones,
   DayNightOperation,
   ConfinementLevel,
 } from '../../types/sora';
@@ -48,6 +50,8 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
   const errors = useMemo(() => ({
     operationType: operation.operationType === null,
     dangerousGoods: operation.dangerousGoods === null,
+    droppingMaterials: operation.droppingMaterials === null,
+    controlMultipleDrones: operation.controlMultipleDrones === null && operation.controlMultipleDronesNumber <= 0,
     dayNightOperation: operation.dayNightOperation === null,
     operationStartTime: !operation.operationStartTime.trim(),
     operationEndTime: !operation.operationEndTime.trim(),
@@ -200,6 +204,142 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
               <option value="OUI">OUI</option>
             </select>
           </div>
+          {operation.dangerousGoods === 'OUI' ? (
+            <div className="md:col-span-2">
+              <Tooltip text="Transport de marchandises dangereuses. Cochez cette case si l'UAS transporte des marchandises dangereuses (par exemple, des articles ou substances dangereux, des explosifs, des gaz, des substances inflammables, radioactives, toxiques ou corrosives, etc.).
+                Si cette case est cochée, dressez la liste des marchandises dangereuses transportées et fournissez les procédures relatives au transport de marchandises dangereuses, en expliquant comment vous vous assurez qu'aucun risque supplémentaire n'est posé à des tiers. Joignez les preuves ou les documents justificatifs (par exemple : autorisations, procédures de manutention, instructions).">
+                <label className="block text-sm font-medium text-gray-700">
+                  Description des marchandises dangereuses transportées *
+                </label>
+              </Tooltip>
+              <Editor
+                // tinymceScriptSrc="/tinymce/tinymce.min.js"
+                apiKey={process.env.REACT_APP_TINYMCE_KEY}
+                init={{
+                  menubar: false,
+                  toolbar: 'undo redo | bold italic strikethrough | bullist numlist | alignleft aligncenter alignright outdent indent',
+                  height: 300,
+                }}
+                value={operation.dangerousGoodsDescription}
+                onEditorChange={(content: string) =>
+                  onChange({ ...operation, dangerousGoodsDescription: content })
+                }
+              />
+            </div>
+          ) : <div>&nbsp;</div>}
+
+          {/* // Dropping materials */}
+          <div>
+            <Tooltip text="GM1 Article 2 - Definitions (11)">
+              <label className={getLabelClassName('droppingMaterials')}>
+                Largage *
+              </label>
+            </Tooltip>
+            <select
+              value={operation.droppingMaterials}
+              onChange={(e) =>
+                onChange({
+                  ...operation,
+                  droppingMaterials: e.target.value as DroppingMaterials || null,
+                })
+              }
+              className={getInputClassName('droppingMaterials')}
+            >
+              <option value="">Sélectionner une réponse</option>
+              <option value="NON">NON</option>
+              <option value="OUI">OUI</option>
+            </select>
+          </div>
+          {operation.droppingMaterials === 'OUI' ? (
+            <div className="md:col-span-2">
+              <Tooltip text="Largage de matériels. Cochez cette case si l'opération comprend le largage ou le déversement de matériels/liquides depuis l'UA (par exemple, livraison de nourriture ou de colis, pulvérisation de produits chimiques).
+              Si OUI, décrivez les matériels largués et référencez les documents justificatifs (autorisations, procédures de manipulation, instructions) afin d'expliquer comment l'opération peut être effectuée en toute sécurité.">
+                <label className="block text-sm font-medium text-gray-700">
+                  Description des matériels largués *
+                </label>
+              </Tooltip>
+              <Editor
+                // tinymceScriptSrc="/tinymce/tinymce.min.js"
+                apiKey={process.env.REACT_APP_TINYMCE_KEY}
+                init={{
+                  menubar: false,
+                  toolbar: 'undo redo | bold italic strikethrough | bullist numlist | alignleft aligncenter alignright outdent indent',
+                  height: 300,
+                }}
+                value={operation.droppingMaterialsDescription}
+                onEditorChange={(content: string) =>
+                  onChange({ ...operation, droppingMaterialsDescription: content })
+                }
+              />
+            </div>
+          ) : <div>&nbsp;</div>}
+
+
+
+          {/* // Does the remote pilot control more than one UA simultaneously?  */}
+          <div>
+            <Tooltip text="GM1 Article 2 - Definitions (11)">
+              <label className={getLabelClassName('controlMultipleDrones')}>
+                Le pilote contrôle-t-il plusieurs UA simultanément ? *
+              </label>
+            </Tooltip>
+            <select
+              value={operation.controlMultipleDrones}
+              onChange={(e) =>
+                onChange({
+                  ...operation,
+                  controlMultipleDrones: e.target.value as ControlMultipleDrones || null,
+                })
+              }
+              className={getInputClassName('controlMultipleDrones')}
+            >
+              <option value="">Sélectionner une réponse</option>
+              <option value="NON">NON</option>
+              <option value="OUI">OUI</option>
+            </select>
+          </div>
+          {operation.controlMultipleDrones === 'OUI' ? (
+            <div className="md:col-span-2">
+
+              <Tooltip text="Nombre d'UA contrôlés par un seul pilote">
+                <label className={getLabelClassName('controlMultipleDronesNumber')}>
+                  Nombre d'UA contrôlés par un seul pilote *
+                </label>
+              </Tooltip>
+              <input
+                type="number"
+                value={operation.controlMultipleDronesNumber}
+                min={0}
+                onChange={(e) =>
+                  onChange({
+                    ...operation,
+                    controlMultipleDronesNumber: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className={getInputClassName('controlMultipleDronesNumber')}
+              />
+
+
+              <Tooltip text="Si cette option est sélectionnée, précisez le nombre d'UA contrôlés par un seul pilote. Cette option n'est disponible que si le concepteur a indiqué que l'UAS a été conçu avec un niveau d'automatisation réduisant l'intervention du pilote à distance.">
+                <label className="block text-sm font-medium text-gray-700">
+                  Pécisez le nombre d'UA contrôlés par un seul pilote *
+                </label>
+              </Tooltip>
+              <Editor
+                // tinymceScriptSrc="/tinymce/tinymce.min.js"
+                apiKey={process.env.REACT_APP_TINYMCE_KEY}
+                init={{
+                  menubar: false,
+                  toolbar: 'undo redo | bold italic strikethrough | bullist numlist | alignleft aligncenter alignright outdent indent',
+                  height: 300,
+                }}
+                value={operation.controlMultipleDronesDescription}
+                onEditorChange={(content: string) =>
+                  onChange({ ...operation, controlMultipleDronesDescription: content })
+                }
+              />
+            </div>
+          ) : <div>&nbsp;</div>}
           {/* <div>
             <Tooltip text="Insérer l'altitude maximale de vol, exprimée en mètres et en pieds entre parenthèses, du volume opérationnel approuvé (en ajoutant le tampon pour le risque aérien, le cas échéant) en utilisant la référence AGL lorsque la limite supérieure est inférieure à 150 m (492 ft), ou en utilisant la référence MSL lorsque la limite supérieure est supérieure à 150 m (492 ft).">
               <label className="block text-sm font-medium text-gray-700">
@@ -219,7 +359,7 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
             />
           </div> */}
 
-          <div>&nbsp;</div>
+
           <div>
             <label className={getLabelClassName('dayNightOperation')}>
               Opération de jour ou de nuit *

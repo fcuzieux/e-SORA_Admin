@@ -22,6 +22,8 @@ export type OperationType =
   | 'EVLOS – Vol en vue Etendue'
   | 'BVLOS – Vol hors vue';
 export type DangerousGoods = 'OUI' | 'NON';
+export type DroppingMaterials = 'OUI' | 'NON';
+export type ControlMultipleDrones = 'OUI' | 'NON';
 export type PopulationDensityModulation = 'OUI' | 'NON';
 export type PopulationDensityDataBase = 'INSEE_Filosofi2019_200m' | 'GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_dens';
 export type ObstaclesModulation = 'OUI' | 'NON';
@@ -128,6 +130,12 @@ export interface OperationInfo {
   operationType: OperationType | null;
   visualObserversCount: number;
   dangerousGoods: DangerousGoods | null;
+  dangerousGoodsDescription: string;
+  droppingMaterials: DroppingMaterials | null;
+  droppingMaterialsDescription: string;
+  controlMultipleDrones: ControlMultipleDrones | null;
+  controlMultipleDronesNumber: number;
+  controlMultipleDronesDescription: string;
   maxOperationHeight: number;
   dayNightOperation: DayNightOperation | null;
   operationStartTime: string;

@@ -54,7 +54,7 @@ export function SoraForm() {
       !!operator.locations?.trim()
     );
   };
-  const isOConopsInfoValid = () => {
+  const isConopsInfoValid = () => {
     const { drone, operation } = formData;
     return (
       drone.manufacturer.trim() !== '' &&
@@ -73,6 +73,8 @@ export function SoraForm() {
       drone.environmentalLimitations.visibility != -999 &&
       operation.operationType !== null &&
       operation.dangerousGoods !== null &&
+      operation.droppingMaterials !== null &&
+      operation.controlMultipleDrones !== null &&
       operation.dayNightOperation !== null &&
       operation.operationStartTime !== null &&
       operation.operationEndTime !== null &&
@@ -241,7 +243,7 @@ export function SoraForm() {
           ) : currentStep === 'conops' ? (
             <button
               onClick={handleNext}
-              disabled={!isOConopsInfoValid()}
+              disabled={!isConopsInfoValid()}
               className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Continuer
@@ -308,7 +310,7 @@ export function SoraForm() {
           ) : currentStep === 'conops' ? (
             <button
               onClick={handleNext}
-              disabled={!isOConopsInfoValid()}
+              disabled={!isConopsInfoValid()}
               className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Continuer
