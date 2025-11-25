@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FileText, ArrowLeft, ArrowRight } from 'lucide-react';
+import { FileText, ArrowLeft, ArrowRight, Info } from 'lucide-react';
 import {
   RiskAssessmentInfo,
   DroneInfo,
@@ -752,6 +752,7 @@ export function GroundRiskInitial({
         ? `<compute_flight_start>true</compute_flight_start>`
         : `<compute_flight_start>false</compute_flight_start>`}
     <flight_start>${assessment.assessmentStartTime}:00</flight_start>
+    <flight_end>${assessment.assessmentEndTime}:00</flight_end>
   </mission>
   <iGRC id="3">
     ${assessment.assessmentCriticalArea.includes('JARUS')
@@ -907,11 +908,19 @@ export function GroundRiskInitial({
 
       <section className="space-y-4">
         <h3 className="text-lg font-medium">Mission</h3>
+        <label className="text-sm font-medium">Vous devez ici fournir les éléments de trajectoires et/ou zones définissant la mission.</label>
 
         <div className="bg-gray-50 p-4 rounded-lg space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Tooltip text="Option Hauteur de vol">
+              <Tooltip text={
+                <div>
+                  Option Hauteur de vol :
+                  <br />
+                  <li> * Hauteur de vol suivant trajectoire(s) = La trajectoire KML fournit la heuteur de vol</li>
+                  <li> * Hauteur de vol en suivi de terrain = La trajectoire KML fournit seulement la projetée de la trajectoire, la hauteur de vol sera précisée dans le champ annexe.</li>
+                </div>
+              }>
                 <label className="block text-sm font-medium text-gray-700">
                   Hauteur de Vol
                 </label>
@@ -972,10 +981,11 @@ export function GroundRiskInitial({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div>
-
-              <label className="block text-sm font-medium text-gray-700">
-                Vitesse de Croisière (m/s)
-              </label>
+              <Tooltip text="Rappel de la vitesse de croisière du drone déclarée à l'étape précédente.">
+                <label className="block text-sm font-medium text-gray-700">
+                  Vitesse de Croisière (m/s)
+                </label>
+              </Tooltip>
               <div className="mt-1 p-2 bg-gray-50 rounded-md">
                 {assessment.VCruise}
               </div>
@@ -983,55 +993,9 @@ export function GroundRiskInitial({
               <div>
 
               </div>
-              <Tooltip text=" XXX ">
-                <label className="block text-sm font-medium text-gray-700">
-                  Moduler la densité de population en fonction du temps de vol
-                  le long de la trajectoire du drone
-                </label>
-              </Tooltip>
-              <select
-                value={assessment.PopulationDensityModulation}
-                onChange={(e) =>
-                  onChange({
-                    ...assessment,
-                    PopulationDensityModulation: e.target
-                      .value as PopulationDensityModulation,
-                  })
-                }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="Sélectionner une méthode d'évaluation">
-                  Sélectionner une méthode d'évaluation
-                </option>
-                <option value="NON">NON</option>
-                <option value="OUI">OUI</option>
-              </select>
+
             </div>
-            {assessment.PopulationDensityModulation ===
-              'OUI' && (
-                <div>
-                  <Tooltip text="Heure Locale spécifiée à l'étape #1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Heure de Démarrage des opérations
-                    </label>
-                  </Tooltip>
-                  <div className="mt-1 relative">
-                    <input
-                      type="time"
-                      value={assessment.assessmentStartTime}
-                      onChange={(e) =>
-                        onChange({
-                          ...assessment,
-                          assessmentStartTime: e.target.value,
-                        })
-                      }
-                      className="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      disabled
-                    />
-                    <Clock className="absolute right-3 top-2 h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
-              )}
+
           </div>
 
           <div>
@@ -1099,11 +1063,15 @@ export function GroundRiskInitial({
         <h3 className="text-lg font-medium">
           Determination de l'iGRC : Intrinsic Ground Risk Class
         </h3>
+        <label className="text-sm font-medium">L'ordre des étapes est indiqué par le numéro. Chaque étape doit être remplie dans l'ordre. Seules la première étape Etape 1: Determination de la surface critique de crash (Ac).
+          est optionnelle.</label>
+
         <div className="bg-gray-50 p-4 rounded-lg space-y-4">
 
 
           <h2 className="text-lg font-medium">
-            Etape 1 : Determination de la surface critique de crash (Ac).<button
+            Etape 1 : (Optionnelle) Determination de la surface critique de crash (Ac).
+            <button
               type="button"
               onClick={() => window.open('https://www.easa.europa.eu/sites/default/files/dfu/d2_-_consolidated_gm-for_publication-02052024.pdf', '_blank')}
               className="text-blue-500 hover:text-blue-700 transition-colors"
@@ -1112,6 +1080,7 @@ export function GroundRiskInitial({
               <HelpCircle className="w-4 h-4" />
             </button>
           </h2>
+          <label className="text-sm font-medium">Si vous ne souhaitez pas calculer la surface critique de crash (Ac), vous pouvez simplement sélectionner la méthode "Selon les Tables SORA" pour passer à l'étape suivante.</label>
 
 
           <div>
@@ -1304,8 +1273,11 @@ export function GroundRiskInitial({
                 }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               >
-                <option value="Sélectionner une méthode d'évaluation">
+                <option value="">
                   Sélectionner une méthode d'évaluation
+                </option>
+                <option value="Selon les Tables SORA">
+                  Selon les Tables SORA
                 </option>
                 <option value="Calcul selon les Modèles JARUS">
                   Calcul selon les Modèles JARUS
@@ -1392,10 +1364,25 @@ export function GroundRiskInitial({
             // | "Plus léger que l'air"
             // | 'Autre';              
             <div>
+              <h2 className="text-lg font-medium text-gray-900">
+                Calcul de la Surface Critique selon le modèle JARUS
+              </h2>
+
+              <label className="block text-sm font-medium text-gray-700">
+                <Info className="text-blue-500" /> Vous avez choisi de calculer la Surface Critique selon les Modèles JARUS.
+                <br />
+                La page de calcul JARUS se formate automatiquement selon votre type d'appareil.
+                <br />
+                Les paramètres à renseigner sont marqués d'une (*)
+                <br />
+                <br />
+              </label>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Valeur de la Surface Critique Calculée (m²)
-                </label>
+                <Tooltip text="Le champ ci-dessous affichera la valeur de la Surface Critique Calculée en m² selon la méthode JARUS en prenant en compte vos choix et valeur ci-après.">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Valeur de la Surface Critique Calculée (m²)
+                  </label>
+                </Tooltip>
                 <div className="mt-1 block w-full rounded-md border-black border-2 font-bold shadow-sm focus:border-blue-500 focus:ring-blue-500">
                   {assessment.GlidingCapability === "OUI" || assessment.HighImpactAngle === 'NON' ? (
 
@@ -1882,7 +1869,9 @@ export function GroundRiskInitial({
             //   </div>
           ) : (
             <div>
-
+              Appliquer la Seuil de Surface Critique {assessment.CriticalArea = ThresholdACtable()} m²
+              <br />
+              Et la Classe de Dimension Caractéristique Max. Applicable {CalculmaxCharacteristicDimensionClass()} m
             </div>
           )
           }
@@ -3537,7 +3526,7 @@ export function GroundRiskInitial({
             <div>
               <Tooltip text={
                 <div>
-                  <li>Le calcul de l'iGRC peut être déterminer par l'utilisateur qui devra alors fournir la densité de population, la vitesse maximale de l'UAS et la dimension caractéristique maximale étant alors utilisé pour déterminer un iGRC selon la table. Une justification de la densioté de population doit être fournie, en justifiant de la base de donnée de population utilisée.</li>
+                  <li>Le calcul de l'iGRC peut être déterminer par l'utilisateur qui devra alors fournir la densité de population, la vitesse maximale de l'UAS et la dimension caractéristique maximale étant alors utilisé pour déterminer un iGRC selon la table. Une justification de la densité de population doit être fournie, en justifiant de la base de donnée de population utilisée.</li>
                   <br />
                   <li>Sinon l'utilisateur peut choisir de générer un fichier d'input pour utiliser l'outil DROSERA(c). Il reportera le fichier de résultat DROSERA dans le champ à cet effet. </li>
                   <br />
@@ -3578,7 +3567,10 @@ export function GroundRiskInitial({
             </div>
 
 
-
+            <h3 className="text-lg font-medium">Rappels des données de base</h3>
+            <div>
+              &nbsp;
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Dimensions caractéristiques maximales (m)
@@ -3735,11 +3727,100 @@ export function GroundRiskInitial({
             </div>
 
           ) : assessment.assessmentiGRC === 'Calcul DROSERA' ? (
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div>
+                <Tooltip text="Cette option n'aura d'impact qu'en cas d'usage du module DROSERA à l'étape Ground Risk Assessment Initial plus bas.">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Moduler la densité de population en fonction du temps de vol le long de la trajectoire du drone
+                  </label>
+                </Tooltip>
+                <select
+                  value={assessment.PopulationDensityModulation}
+                  onChange={(e) =>
+                    onChange({
+                      ...assessment,
+                      PopulationDensityModulation: e.target
+                        .value as PopulationDensityModulation,
+                    })
+                  }
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="Sélectionner une méthode d'évaluation">
+                    Sélectionner une méthode d'évaluation
+                  </option>
+                  <option value="NON">NON</option>
+                  <option value="OUI">OUI</option>
+                </select>
+              </div>
+              {assessment.PopulationDensityModulation ===
+                'OUI' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Tooltip text="Rappel : Heure Locale spécifiée à l'étape #1">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Heure de Démarrage
+                        </label>
+                      </Tooltip>
+                      <div className="mt-1 relative">
+                        <input
+                          type="time"
+                          value={assessment.assessmentStartTime}
+                          onChange={(e) =>
+                            onChange({
+                              ...assessment,
+                              assessmentStartTime: e.target.value,
+                            })
+                          }
+                          className="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                          disabled
+                        />
+                        <Clock className="absolute right-3 top-2 h-5 w-5 text-gray-400" />
+                      </div>
+
+                    </div>
+                    <div>
+                      <Tooltip text="Rappel : Heure Locale spécifiée à l'étape #1">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Heure de Fin des opérations
+                        </label>
+                      </Tooltip>
+                      <div className="mt-1 relative">
+                        <input
+                          type="time"
+                          value={assessment.assessmentEndTime}
+                          onChange={(e) =>
+                            onChange({
+                              ...assessment,
+                              assessmentEndTime: e.target.value,
+                            })
+                          }
+                          className="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                          disabled
+                        />
+                        <Clock className="absolute right-3 top-2 h-5 w-5 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+
+                )}
+              {assessment.PopulationDensityModulation === 'NON' ? (
+                <div>
+                  &nbsp;
+                </div>
+              ) : assessment.PopulationDensityModulation === 'OUI' ? (
+                null
+              ) : (
+                <div>
+                  &nbsp;
+                </div>
+              )}
               <button
                 // onClick={() => exportToExcel(formData)}
                 onClick={() => generateDroseraInputFile()}
-                className=" flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                className=" flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!(assessment.PopulationDensityModulation === 'OUI' || assessment.PopulationDensityModulation === 'NON') || !(assessment.PopulationDensityDataBase === 'INSEE_Filosofi2019_200m' || assessment.PopulationDensityDataBase === 'GHS_POP_E2025_GLOBE_R2023A_54009_100_V1_0_dens')}
               >
                 <FileText className="w-5 h-5" />
                 Générer le fichier d'input pour DROSERA
@@ -4099,7 +4180,7 @@ export function GroundRiskInitial({
                 <option value="8">8</option>
               </select>
             </div>
-            <div>
+            {/* <div>
               <Tooltip text="Veuillez entrer le niveau GRC Initial déclaré.">
                 <label className="block text-sm font-medium text-gray-700">
                   iGRC Moyen (Zone adjacente)
@@ -4124,11 +4205,11 @@ export function GroundRiskInitial({
                 <option value="7">7</option>
                 <option value="8">8</option>
               </select>
-            </div>
+            </div> */}
             <div className="bg-gray-400 p-4 md:col-span-2">
               <Tooltip text="Si votre iGRC déclaré diffère de celui calculé ou si vous avez choisi de spécifier vous même votre iGRC, une justification complémentaire devra être apportée. Dans les autres cas vous pouvez apporter un complément d'information ou laisser ce champ vide.">
                 <label className="block text-sm font-medium text-gray-700">
-                  Justification complémnetaire de vos iGRC déclarés
+                  Justification complémnetaire de votre iGRC déclaré
                 </label>
               </Tooltip>
               <textarea

@@ -33,7 +33,8 @@ export function SoraForm() {
         ...formData,
         RiskAssessment: {
           ...formData.RiskAssessment,
-          assessmentStartTime: formData.operation?.operationStartTime || ''
+          assessmentStartTime: formData.operation?.operationStartTime || '',
+          assessmentEndTime: formData.operation?.operationEndTime || ''
         }
       });
     }
@@ -143,7 +144,8 @@ export function SoraForm() {
                   operation,
                   RiskAssessment: {
                     ...formData.RiskAssessment,
-                    assessmentStartTime: operation.operationStartTime
+                    assessmentStartTime: operation.operationStartTime,
+                    assessmentEndTime: operation.operationEndTime,
                   }
                 });
               }}
