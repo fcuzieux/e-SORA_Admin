@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { DroneInfo, DroneClass, UasType } from '../../types/sora';
 import { Tooltip } from '../common/Tooltip';
 import { Upload, ChevronDown, ChevronUp } from 'lucide-react';
@@ -8,7 +8,7 @@ interface DroneFormProps {
   onChange: (drone: DroneInfo) => void;
 }
 
-const droneClasses: DroneClass[] = ['Sans', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'Prototype'];
+const droneClasses: DroneClass[] = ['Sans', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'Prototype', 'Specifique', 'Certifie'];
 const uasTypes: UasType[] = ['Avion', 'Hélicoptère', 'Multirotor', 'Hybride/VTOL', 'Plus léger que l\'air', 'Autre'];
 
 const FilePreview = ({ file }: { file: File }) => {
@@ -43,11 +43,59 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showTechnicalRequirements, setShowTechnicalRequirements] = useState(false);
 
+  const errors = useMemo(() => ({
+    manufacturer: !drone.manufacturer.trim(),
+    model: !drone.model.trim(),
+    uasType: drone.uasType === null,
+    serialNumber: !drone.serialNumber.trim(),
+    classIdentification: drone.classIdentification === null,
+    maxCharacteristicDimension: drone.maxCharacteristicDimension <= 0,
+    VCruise: drone.VCruise <= 0,
+    maxSpeed: drone.maxSpeed <= 0,
+    MTOW: drone.MTOW <= 0,
+    maxWindSpeedTakeoff: drone.environmentalLimitations.maxWindSpeedTakeoff <= 0,
+    maxGustSpeed: drone.environmentalLimitations.maxGustSpeed <= 0,
+    minTemperature: drone.environmentalLimitations.minTemperature === 0,
+    maxTemperature: drone.environmentalLimitations.maxTemperature <= 0,
+    visibility: drone.environmentalLimitations.visibility <= 0,
+  }), [drone]);
+
+  const getInputClassName = (fieldName: keyof typeof errors) => {
+    return `mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 ${errors[fieldName]
+      ? 'border-red-300 focus:border-red-500 bg-red-50'
+      : 'border-gray-300 focus:border-blue-500'
+      }`;
+  };
+
+  const getLabelClassName = (fieldName: keyof typeof errors) => {
+    return `block text-sm font-medium ${errors[fieldName] ? 'text-red-600' : 'text-gray-700'}`;
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
       const newFiles = Array.from(files);
-      onChange({ ...drone, technicalDocuments: [...(drone.technicalDocuments || []), ...newFiles] });
+      const validFiles: File[] = [];
+      const invalidFiles: string[] = [];
+
+      newFiles.forEach(file => {
+        if (file.size <= 500 * 1024) { // 500KB limit
+          validFiles.push(file);
+        } else {
+          invalidFiles.push(file.name);
+        }
+      });
+
+      if (invalidFiles.length > 0) {
+        alert(`Les fichiers suivants dépassent la taille limite de 500 Ko et n'ont pas été ajoutés :\n${invalidFiles.join('\n')}`);
+      }
+
+      if (validFiles.length > 0) {
+        onChange({ ...drone, technicalDocuments: [...(drone.technicalDocuments || []), ...validFiles] });
+      }
+
+      // Reset input to allow selecting the same file again if needed
+      event.target.value = '';
     }
   };
 
@@ -63,32 +111,35 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Fabricant</label>
+          <Tooltip text="Fabricant de l'UAS tel qu'il a été déclaré au cours de la procédure d'enregistrement. (Design Organisation)">
+            <label className={getLabelClassName('manufacturer')}>Fabricant *</label>
+          </Tooltip>
           <input
             type="text"
             value={drone.manufacturer}
             onChange={(e) => onChange({ ...drone, manufacturer: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className={getInputClassName('manufacturer')}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Modèle</label>
+          <label className={getLabelClassName('model')}>Modèle *</label>
           <input
             type="text"
             value={drone.model}
             onChange={(e) => onChange({ ...drone, model: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className={getInputClassName('model')}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Type d'UAS</label>
+          <label className={getLabelClassName('uasType')}>Type d'UAS *</label>
           <select
             value={drone.uasType}
-            onChange={(e) => onChange({ ...drone, uasType: e.target.value as UasType })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            onChange={(e) => onChange({ ...drone, uasType: e.target.value as UasType || null })}
+            className={getInputClassName('uasType')}
           >
+            <option value="">Sélectionner un type d'UAS</option>
             {uasTypes.map((type) => (
               <option key={type} value={type}>
                 {type}
@@ -98,12 +149,12 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Numéro de série</label>
+          <label className={getLabelClassName('serialNumber')}>Numéro de série *</label>
           <input
             type="text"
             value={drone.serialNumber}
             onChange={(e) => onChange({ ...drone, serialNumber: e.target.value })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className={getInputClassName('serialNumber')}
           />
         </div>
 
@@ -148,6 +199,26 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
+        <div>
+          <Tooltip text="Si une classe est apposée sur le drone">
+            <label className={getLabelClassName('classIdentification')}>Identification de Classe *</label>
+          </Tooltip>
+          <select
+            value={drone.classIdentification || ''}
+            onChange={(e) => onChange({
+              ...drone,
+              classIdentification: e.target.value as DroneClass || null
+            })}
+            className={getInputClassName('classIdentification')}
+          >
+            <option value="">Sélectionner une classe</option>
+            {droneClasses.map((classId) => (
+              <option key={classId} value={classId}>
+                Classe {classId}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -168,7 +239,7 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             >
               <Upload className="w-5 h-5 text-gray-400" />
               <span className="text-gray-600">
-                Déposer des fichiers image(.png, .jpg, .jpeg) ici ou cliquer pour parcourir
+                Télécharger des fichiers image(.png, .jpg, .jpeg) ici ou cliquer pour parcourir (taille limite de 500 Ko)
               </span>
             </div>
           </div>
@@ -192,7 +263,7 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
           )}
         </div>
 
-        <div className="space-y-4">
+        <div className="md:col-span-2">
           <h3 className="text-lg font-medium">Dimensions</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -239,7 +310,6 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
           </div>
         </div>
         <div>
-          <div> &nbsp;</div>
           <Tooltip text={
             <div>
               Exemples de dimensions caractéristiques maximales de l'UA :
@@ -252,16 +322,22 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             </div>
           }>
 
-            <label className="block text-sm font-medium text-gray-700">Dimensions caractéristiques maximales (m)</label>
+            <label className={getLabelClassName('maxCharacteristicDimension')}>Dimensions caractéristiques maximales (m) *</label>
           </Tooltip>
           <input
             type="number"
             value={drone.maxCharacteristicDimension}
+            min={0}
             onChange={(e) => onChange({ ...drone, maxCharacteristicDimension: parseFloat(e.target.value) })}
             step="0.1" // Ajoutez cet attribut pour définir l'incrément de l'input
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className={getInputClassName('maxCharacteristicDimension')}
           />
         </div>
+
+        <div> &nbsp;</div>
+
+        <h3 className="text-lg font-medium">Vitesses Caractéristiques</h3>
+
         {/* <div>
           <label className="block text-sm font-medium text-gray-700">Vitesse de Croisière (m/s)</label>
           <input
@@ -274,19 +350,8 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div> */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Vitesse de Croisière (m/s)</label>
-          <input
-            type="number"
-            value={drone.VCruise}
-            step="0.1"
-            min={0}
-            onChange={(e) => onChange({ ...drone, VCruise: parseFloat(e.target.value) })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
 
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-gray-700">Vitesse minimale (m/s)</label>
           <input
             type="number"
@@ -296,11 +361,22 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             onChange={(e) => onChange({ ...drone, minSpeed: parseFloat(e.target.value) })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
-        </div>
-
+        </div> */}
+        <div> &nbsp;</div>
         <div>
-          <Tooltip text="Vitesse Sol maximale du drone en opération en (m/s) ">
-            <label className="block text-sm font-medium text-gray-700">Vitesse maximale (m/s)</label>
+          <label className={getLabelClassName('VCruise')}>Vitesse de Croisière (m/s) *</label>
+          <input
+            type="number"
+            value={drone.VCruise}
+            step="0.1"
+            min={0}
+            onChange={(e) => onChange({ ...drone, VCruise: parseFloat(e.target.value) })}
+            className={getInputClassName('VCruise')}
+          />
+        </div>
+        <div>
+          <Tooltip text="Vitesse Sol maximale du drone en (m/s) ">
+            <label className={getLabelClassName('maxSpeed')}>Vitesse maximale (m/s) *</label>
           </Tooltip>
           <input
             type="number"
@@ -308,41 +384,26 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             step="0.1"
             min={0}
             onChange={(e) => onChange({ ...drone, maxSpeed: parseFloat(e.target.value) })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className={getInputClassName('maxSpeed')}
           />
         </div>
+
+        <h3 className="text-lg font-medium">Masses Caractéristiques</h3>
+        <div> &nbsp;</div>
         <div>
           <Tooltip text="Masse Maximale au décolage MTOM (kg) ">
-            <label className="block text-sm font-medium text-gray-700">MTOM (kg)</label>
+            <label className={getLabelClassName('MTOW')}>MTOM (kg) *</label>
           </Tooltip>
           <input
             type="number"
             value={drone.MTOW}
+            min={0}
             step="0.1"
             onChange={(e) => onChange({ ...drone, MTOW: parseFloat(e.target.value) })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className={getInputClassName('MTOW')}
           />
         </div>
-        <div>
-          <Tooltip text="Si une classe est apposée sur le drone">
-            <label className="block text-sm font-medium text-gray-700">Identification de Classe</label>
-          </Tooltip>
-          <select
-            value={drone.classIdentification || ''}
-            onChange={(e) => onChange({
-              ...drone,
-              classIdentification: e.target.value as DroneClass || null
-            })}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          >
-            <option value="">Sélectionner une classe</option>
-            {droneClasses.map((classId) => (
-              <option key={classId} value={classId}>
-                Classe {classId}
-              </option>
-            ))}
-          </select>
-        </div>
+
       </div>
 
       <div className="space-y-4">
@@ -350,9 +411,12 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Vitesse maximale du vent au décollage (m/s)
-            </label>
+            <Tooltip text="Vitesse ne pouvant excéder la vitesse maximale du drone ">
+              <label className={getLabelClassName('maxWindSpeedTakeoff')}>
+                Vitesse maximale du vent au décollage (m/s) *
+              </label>
+            </Tooltip>
+
             <input
               type="number"
               value={drone.environmentalLimitations.maxWindSpeedTakeoff}
@@ -365,7 +429,7 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
               })}
               min={0}
               max={drone.maxSpeed}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('maxWindSpeedTakeoff')}
             />
           </div>
 
@@ -373,9 +437,11 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
 
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Vitesse maximale de tenue à la rafale en évolution (m/s)
-            </label>
+            <Tooltip text="Vitesse ne pouvant excéder la vitesse maximale du drone  et ne pouvant être inférieure à la vitesse maximale du vent au décollage">
+              <label className={getLabelClassName('maxGustSpeed')}>
+                Vitesse maximale de tenue à la rafale en évolution (m/s) *
+              </label>
+            </Tooltip>
             <input
               type="number"
               value={drone.environmentalLimitations.maxGustSpeed}
@@ -388,12 +454,14 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
               })}
               min={drone.environmentalLimitations.maxWindSpeedTakeoff}
               max={drone.maxSpeed}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('maxGustSpeed')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Température [Min] (°C)</label>
+            <Tooltip text="Température minimale pour l'opération du drone">
+              <label className={getLabelClassName('minTemperature')}>Température [Min] (°C) *</label>
+            </Tooltip>
             <input
               type="number"
               value={drone.environmentalLimitations.minTemperature}
@@ -404,12 +472,14 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
                   minTemperature: parseFloat(e.target.value)
                 }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('minTemperature')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Température [Max] (°C)</label>
+            <Tooltip text="Température maximale pour l'opération du drone">
+              <label className={getLabelClassName('maxTemperature')}>Température [Max] (°C) *</label>
+            </Tooltip>
             <input
               type="number"
               value={drone.environmentalLimitations.maxTemperature}
@@ -420,15 +490,18 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
                   maxTemperature: parseFloat(e.target.value)
                 }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('maxTemperature')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Visibilité</label>
+            <Tooltip text="Visibilité minimale pour l'opération du drone exprimée en mètres">
+              <label className={getLabelClassName('visibility')}>Visibilité [m]*</label>
+            </Tooltip>
             <input
               type="number"
               value={drone.environmentalLimitations.visibility}
+              min={0}
               onChange={(e) => onChange({
                 ...drone,
                 environmentalLimitations: {
@@ -436,14 +509,16 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
                   visibility: parseFloat(e.target.value)
                 }
               })}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('visibility')}
             />
           </div>
 
 
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Autres limitations</label>
+            <Tooltip text="Autres limitations environnementales inscrites au manuel de l'UAS">
+              <label className="block text-sm font-medium text-gray-700">Autres limitations</label>
+            </Tooltip>
             <textarea
               value={drone.environmentalLimitations.otherLimitations}
               onChange={(e) => onChange({
@@ -564,7 +639,19 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
-
+            <div>
+              <Tooltip text="Vitesse minimale (m/s) : 0 pour un drone VTOL / vitesse de décrochage pour un drone Avion">
+                <label className="block text-sm font-medium text-gray-700">Vitesse minimale (m/s)</label>
+              </Tooltip>
+              <input
+                type="number"
+                value={drone.minSpeed}
+                step="0.1"
+                min={0}
+                onChange={(e) => onChange({ ...drone, minSpeed: parseFloat(e.target.value) })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">Taux de montée maximal (m/s)</label>
               <input

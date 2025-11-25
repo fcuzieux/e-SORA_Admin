@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { Editor } from '@tinymce/tinymce-react';
 import {
   OperationInfo,
   OperationType,
@@ -15,7 +16,7 @@ interface OperationFormProps {
   operation: OperationInfo;
   onChange: (operation: OperationInfo) => void;
 }
-
+const operationType = ['VLOS – Vol en vue', 'EVLOS – Vol en vue Etendue', 'BVLOS – Vol hors vue'];
 export function OperationForm({ operation, onChange }: OperationFormProps) {
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -23,7 +24,7 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
     const files = event.target.files;
     if (files) {
       const validFiles = Array.from(files).filter(isValidGeoFile);
-      
+
       if (validFiles.length !== files.length) {
         const invalidFiles = Array.from(files).filter(file => !isValidGeoFile(file));
         alert(`Fichiers non supportés ignorés: ${invalidFiles.map(f => f.name).join(', ')}\nFormats supportés: KML, KMZ, GeoJSON`);
@@ -44,6 +45,29 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
     onChange({ ...operation, geoFiles: newFiles });
   };
 
+  const errors = useMemo(() => ({
+    operationType: operation.operationType === null,
+    dangerousGoods: operation.dangerousGoods === null,
+    dayNightOperation: operation.dayNightOperation === null,
+    operationStartTime: !operation.operationStartTime.trim(),
+    operationEndTime: !operation.operationEndTime.trim(),
+    maxDistanceFromPilot: operation.maxDistanceFromPilot <= 0,
+    visualObserversCount: operation.visualObserversCount <= 0,
+    pilotCompetency: !operation.pilotCompetency.trim(),
+    geoFiles: !operation.geoFiles || operation.geoFiles.length === 0,
+  }), [operation]);
+
+  const getInputClassName = (fieldName: keyof typeof errors) => {
+    return `mt-1 block w-full rounded-md shadow-sm focus:ring-blue-500 ${errors[fieldName]
+      ? 'border-red-300 focus:border-red-500 bg-red-50'
+      : 'border-gray-300 focus:border-blue-500'
+      }`;
+  };
+
+  const getLabelClassName = (fieldName: keyof typeof errors) => {
+    return `block text-sm font-medium ${errors[fieldName] ? 'text-red-600' : 'text-gray-700'}`;
+  };
+
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-semibold">Informations sur l'opération</h2>
@@ -51,8 +75,35 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
       <div className="space-y-6">
         <h3 className="text-lg font-medium">Informations générales</h3>
 
+        <div>
+          <Tooltip text="Expliquez brièvement le type d'opération prévu et donnez une description générale du lieu.
+(par exemple, « inspection des lignes électriques en zone rurale », « livraison médicale par drone en banlieue », etc.)">
+            <label className="block text-sm font-medium text-gray-700">
+              Description simple de l'opération
+            </label>
+          </Tooltip>
+          <Editor
+            // tinymceScriptSrc="/tinymce/tinymce.min.js"
+            apiKey={process.env.REACT_APP_TINYMCE_KEY}
+            init={{
+              menubar: false,
+              toolbar: 'undo redo | bold italic strikethrough | bullist numlist | alignleft aligncenter alignright outdent indent',
+              height: 300,
+            }}
+            value={operation.SimpleDescription}
+
+            // onEditorChange={(e) =>
+            //   onChange({ ...operation, SimpleDescription: e })
+            // }
+            onChange={(e) =>
+              onChange({ ...operation, SimpleDescription: e.target.value })
+            }
+
+          />
+
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+          {/* <div>
             <Tooltip text="Indiquer la distance maximale en km à prendre en compte pour la zone adjacente, à partir des limites de la zone tampon pour les risques liés au sol.">
               <label className="block text-sm font-medium text-gray-700">
                 Étendue de la zone adjacente (km)
@@ -69,7 +120,8 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
               }
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
-          </div>
+          </div> */}
+
 
           <div>
             <Tooltip
@@ -77,8 +129,8 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
             Les opérations EVLOS permettent le vol d'un UAS au-delà de la vue visuelle du télépilote en utilisant des ' observateurs entraînés ' pour garder l'aéronef dans leur champ de vision. 
             BVLOS : l'exploitation d'un UAS au-delà d'une distance où le pilote à distance est en mesure de réagir ou d'éviter d'autres utilisateurs de l'espace aérien par des moyens visuels directs"
             >
-              <label className="block text-sm font-medium text-gray-700">
-                Type d'opération
+              <label className={getLabelClassName('operationType')}>
+                Type d'opération *
               </label>
             </Tooltip>
             <select
@@ -86,48 +138,56 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
               onChange={(e) =>
                 onChange({
                   ...operation,
-                  operationType: e.target.value as OperationType,
+                  operationType: e.target.value as OperationType || null,
                   visualObserversCount:
                     e.target.value === 'EVLOS – Vol en vue Etendue'
                       ? operation.visualObserversCount
                       : 0,
                 })
               }
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('operationType')}
             >
-              <option value="VLOS – Vol en vue">VLOS – Vol en vue</option>
+              <option value="">Sélectionner un type d'opération</option>
+
+              {operationType.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+              {/* <option value="VLOS – Vol en vue">VLOS – Vol en vue</option>
               <option value="EVLOS – Vol en vue Etendue">
                 EVLOS – Vol en vue Etendue
               </option>
-              <option value="BVLOS – Vol hors vue">BVLOS – Vol hors vue</option>
+              <option value="BVLOS – Vol hors vue">BVLOS – Vol hors vue</option> */}
             </select>
           </div>
 
-          {operation.operationType === 'EVLOS – Vol en vue Etendue' && (
+          {operation.operationType === 'EVLOS – Vol en vue Etendue' ? (
             <div>
               <Tooltip text="Penser à préciser sur la cartographie un fichier kml précisant la position des observateurs.">
-                <label className="block text-sm font-medium text-gray-700">
-                  Nombre d'observateurs visuels
+                <label className={getLabelClassName('visualObserversCount')}>
+                  Nombre d'observateurs visuels *
                 </label>
               </Tooltip>
               <input
                 type="number"
                 value={operation.visualObserversCount}
+                min={0}
                 onChange={(e) =>
                   onChange({
                     ...operation,
                     visualObserversCount: parseInt(e.target.value) || 0,
                   })
                 }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className={getInputClassName('visualObserversCount')}
               />
             </div>
-          )}
+          ) : <div>&nbsp;</div>}
 
           <div>
             <Tooltip text="GM1 Article 2 - Definitions (11)">
-              <label className="block text-sm font-medium text-gray-700">
-                Transport de marchandises dangereuses
+              <label className={getLabelClassName('dangerousGoods')}>
+                Transport de marchandises dangereuses *
               </label>
             </Tooltip>
             <select
@@ -135,17 +195,17 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
               onChange={(e) =>
                 onChange({
                   ...operation,
-                  dangerousGoods: e.target.value as DangerousGoods,
+                  dangerousGoods: e.target.value as DangerousGoods || null,
                 })
               }
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('dangerousGoods')}
             >
+              <option value="">Sélectionner une réponse</option>
               <option value="NON">NON</option>
               <option value="OUI">OUI</option>
             </select>
           </div>
-
-          <div>
+          {/* <div>
             <Tooltip text="Insérer l'altitude maximale de vol, exprimée en mètres et en pieds entre parenthèses, du volume opérationnel approuvé (en ajoutant le tampon pour le risque aérien, le cas échéant) en utilisant la référence AGL lorsque la limite supérieure est inférieure à 150 m (492 ft), ou en utilisant la référence MSL lorsque la limite supérieure est supérieure à 150 m (492 ft).">
               <label className="block text-sm font-medium text-gray-700">
                 Hauteur maximale du volume d'opération
@@ -162,32 +222,34 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
               }
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
-          </div>
+          </div> */}
 
+          <div>&nbsp;</div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Opération de jour ou de nuit
+            <label className={getLabelClassName('dayNightOperation')}>
+              Opération de jour ou de nuit *
             </label>
             <select
               value={operation.dayNightOperation}
               onChange={(e) =>
                 onChange({
                   ...operation,
-                  dayNightOperation: e.target.value as DayNightOperation,
+                  dayNightOperation: e.target.value as DayNightOperation || null,
                 })
               }
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('dayNightOperation')}
             >
+              <option value="">Sélectionner une réponse</option>
               <option value="Jour">Jour</option>
               <option value="Nuit">Nuit</option>
               <option value="Jour & Nuit">Jour & Nuit</option>
             </select>
           </div>
-
+          <div>&nbsp;</div>
           <div>
             <Tooltip text="Heure Locale">
-              <label className="block text-sm font-medium text-gray-700">
-                Heure de Démarrage des opérations
+              <label className={getLabelClassName('operationStartTime')}>
+                Heure de Démarrage des opérations *
               </label>
             </Tooltip>
             <div className="mt-1 relative">
@@ -197,7 +259,10 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
                 onChange={(e) =>
                   onChange({ ...operation, operationStartTime: e.target.value })
                 }
-                className="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className={`block w-full pr-10 rounded-md shadow-sm focus:ring-blue-500 ${errors.operationStartTime
+                  ? 'border-red-300 focus:border-red-500 bg-red-50'
+                  : 'border-gray-300 focus:border-blue-500'
+                  }`}
               />
               <Clock className="absolute right-3 top-2 h-5 w-5 text-gray-400" />
             </div>
@@ -205,8 +270,8 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
 
           <div>
             <Tooltip text="Heure Locale">
-              <label className="block text-sm font-medium text-gray-700">
-                Heure de Fin des opérations
+              <label className={getLabelClassName('operationEndTime')}>
+                Heure de Fin des opérations *
               </label>
             </Tooltip>
             <div className="mt-1 relative">
@@ -216,7 +281,10 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
                 onChange={(e) =>
                   onChange({ ...operation, operationEndTime: e.target.value })
                 }
-                className="block w-full pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className={`block w-full pr-10 rounded-md shadow-sm focus:ring-blue-500 ${errors.operationEndTime
+                  ? 'border-red-300 focus:border-red-500 bg-red-50'
+                  : 'border-gray-300 focus:border-blue-500'
+                  }`}
               />
               <Clock className="absolute right-3 top-2 h-5 w-5 text-gray-400" />
             </div>
@@ -230,24 +298,25 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Tooltip text="Indiquer la distance maximale en m à prendre en compte par rapport à la zone d'évolution">
-              <label className="block text-sm font-medium text-gray-700">
-                Distance maximale par rapport au télépilote (m)
+              <label className={getLabelClassName('maxDistanceFromPilot')}>
+                Distance maximale par rapport au télépilote (m) *
               </label>
             </Tooltip>
             <input
               type="number"
               value={operation.maxDistanceFromPilot}
+              min={0}
               onChange={(e) =>
                 onChange({
                   ...operation,
                   maxDistanceFromPilot: parseFloat(e.target.value) || 0,
                 })
               }
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('maxDistanceFromPilot')}
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700">
               Niveau de confinement atteint
             </label>
@@ -264,12 +333,12 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
               <option value="Basic">Basic</option>
               <option value="Enhanced">Enhanced</option>
             </select>
-          </div>
+          </div> */}
 
           <div className="md:col-span-2">
             <Tooltip text='Préciser le type de certificat de télépilote, si nécessaire ; sinon, indiquer "Déclaré".'>
-              <label className="block text-sm font-medium text-gray-700">
-                Compétence du télépilote
+              <label className={getLabelClassName('pilotCompetency')}>
+                Compétence du télépilote *
               </label>
             </Tooltip>
             <textarea
@@ -278,12 +347,12 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
                 onChange({ ...operation, pilotCompetency: e.target.value })
               }
               rows={3}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className={getInputClassName('pilotCompetency')}
             />
           </div>
 
           <div className="md:col-span-2">
-            <Tooltip text='Préciser le type de certificat pour le personnel, autre que le télépilote, essentiel à la sécurité de l&apos;opération, si nécessaire ; sinon, indiquer "Déclaré".'>
+            <Tooltip text='Préciser le type de certificat pour le personnel, autre que le télépilote, essentiel à la sécurité de l&apos;opération, si nécessaire ; sinon, indiquer "Rien à Déclaré".'>
               <label className="block text-sm font-medium text-gray-700">
                 Compétence du personnel, autre que le télépilote, essentielle à
                 la sécurité de l'opération
@@ -321,10 +390,13 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
 
       <div className="md:col-span-2">
         <Tooltip text="Déposez des fichiers KML, KMZ ou GeoJSON détaillant la mission">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Zone Géographique
+          <label className={getLabelClassName('geoFiles')}>
+            Zone Géographique *
           </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-500 transition-colors">
+          <div className={`border-2 border-dashed rounded-lg p-4 transition-colors ${errors.geoFiles
+            ? 'border-red-300 bg-red-50 hover:border-red-500'
+            : 'border-gray-300 hover:border-blue-500'
+            }`}>
             <input
               type="file"
               accept={getGeoFileMimeTypes()}
@@ -371,6 +443,6 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
 
         <OperationMap geoFiles={operation.geoFiles || []} />
       </div>
-    </div>
+    </div >
   );
 }

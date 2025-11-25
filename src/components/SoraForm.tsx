@@ -28,11 +28,11 @@ export function SoraForm() {
 
   // Synchroniser l'heure de démarrage entre l'opération et l'évaluation des risques
   useEffect(() => {
-    if (formData.operation?.operationStartTime !== formData.riskAssessment?.assessmentStartTime) {
+    if (formData.operation?.operationStartTime !== formData.RiskAssessment?.assessmentStartTime) {
       setFormData({
         ...formData,
-        riskAssessment: {
-          ...formData.riskAssessment,
+        RiskAssessment: {
+          ...formData.RiskAssessment,
           assessmentStartTime: formData.operation?.operationStartTime || ''
         }
       });
@@ -48,7 +48,38 @@ export function SoraForm() {
       operator.operationalContact.trim() !== '' &&
       operator.address.trim() !== '' &&
       operator.phone.trim() !== '' &&
-      operator.email.trim() !== ''
+      operator.email.trim() !== '' &&
+      !!operator.startDate?.trim() &&
+      !!operator.endDate?.trim() &&
+      !!operator.locations?.trim()
+    );
+  };
+  const isOConopsInfoValid = () => {
+    const { drone, operation } = formData;
+    return (
+      drone.manufacturer.trim() !== '' &&
+      drone.model.trim() !== '' &&
+      drone.uasType !== null &&
+      drone.serialNumber.trim() !== '' &&
+      drone.classIdentification !== null &&
+      drone.maxCharacteristicDimension > 0 &&
+      drone.VCruise > 0 &&
+      drone.maxSpeed > 0 &&
+      drone.MTOW > 0 &&
+      drone.environmentalLimitations.maxWindSpeedTakeoff >= 0 &&
+      drone.environmentalLimitations.maxGustSpeed >= 0 &&
+      drone.environmentalLimitations.minTemperature >= 0 &&
+      drone.environmentalLimitations.maxTemperature >= 0 &&
+      drone.environmentalLimitations.visibility >= 0 &&
+      operation.operationType !== null &&
+      operation.dangerousGoods !== null &&
+      operation.dayNightOperation !== null &&
+      operation.operationStartTime !== null &&
+      operation.operationEndTime !== null &&
+      operation.maxDistanceFromPilot >= 0 &&
+      operation.visualObserversCount >= 0 &&
+      operation.pilotCompetency !== null &&
+      operation.geoFiles.length > 0
     );
   };
 
@@ -82,12 +113,12 @@ export function SoraForm() {
           <div className="space-y-8">
             <DroneForm
               drone={formData.drone}
-              onChange={(drone) => { 
+              onChange={(drone) => {
                 setFormData({
                   ...formData,
                   drone,
-                  riskAssessment: {
-                    ...formData.riskAssessment,
+                  RiskAssessment: {
+                    ...formData.RiskAssessment,
                     maxCharacteristicDimension: drone.maxCharacteristicDimension,
                     VCruise: drone.VCruise,
                     CruiseSpeed: drone.CruiseSpeed,
@@ -108,8 +139,8 @@ export function SoraForm() {
                 setFormData({
                   ...formData,
                   operation,
-                  riskAssessment: {
-                    ...formData.riskAssessment,
+                  RiskAssessment: {
+                    ...formData.RiskAssessment,
                     assessmentStartTime: operation.operationStartTime
                   }
                 });
@@ -118,61 +149,61 @@ export function SoraForm() {
           </div>
         );
       case 'initial-grc':
-      return (
-        <GroundRiskInitial
-          assessment={formData.riskAssessment}
-          onChange={(riskAssessment) => setFormData({ ...formData, riskAssessment })}
-          showOnly={['intrinsicGroundRisk']}
-        />
-      );
+        return (
+          <GroundRiskInitial
+            assessment={formData.RiskAssessment}
+            onChange={(RiskAssessment) => setFormData({ ...formData, RiskAssessment })}
+            showOnly={['intrinsicGroundRisk']}
+          />
+        );
       case 'final-grc':
         return (
           <GroundRiskAttenuation
-            assessment={formData.riskAssessment}
-            onChange={(riskAssessment) => setFormData({ ...formData, riskAssessment })}
+            assessment={formData.RiskAssessment}
+            onChange={(RiskAssessment) => setFormData({ ...formData, RiskAssessment })}
           />
         );
       case 'initial-arc':
         return (
           <DeterminationARCInitial
-            assessment={formData.riskAssessment}
-            onChange={(riskAssessment) => setFormData({ ...formData, riskAssessment })}
+            assessment={formData.RiskAssessment}
+            onChange={(RiskAssessment) => setFormData({ ...formData, RiskAssessment })}
           />
         );
       case 'final-arc':
         return (
           <DeterminationARCFinal
-            assessment={formData.riskAssessment}
-            onChange={(riskAssessment) => setFormData({ ...formData, riskAssessment })}
+            assessment={formData.RiskAssessment}
+            onChange={(RiskAssessment) => setFormData({ ...formData, RiskAssessment })}
           />
         );
       case 'tactical-mitigation':
         return (
           <TacticalMitigation
-            assessment={formData.riskAssessment}
-            onChange={(riskAssessment) => setFormData({ ...formData, riskAssessment })}
+            assessment={formData.RiskAssessment}
+            onChange={(RiskAssessment) => setFormData({ ...formData, RiskAssessment })}
           />
         );
       case 'sail':
         return (
           <Sail
-            assessment={formData.riskAssessment}
-            onChange={(riskAssessment) => setFormData({ ...formData, riskAssessment })}
+            assessment={formData.RiskAssessment}
+            onChange={(RiskAssessment) => setFormData({ ...formData, RiskAssessment })}
           />
         );
       case 'oso':
         return (
           <OsoForm
             osos={formData.osos}
-            assessment={formData.riskAssessment}
+            assessment={formData.RiskAssessment}
             onChange={(osos) => setFormData({ ...formData, osos })}
           />
         );
       case 'adjacent-areas':
         return (
           <AdjacentAreas
-            assessment={formData.riskAssessment}
-            onChange={(riskAssessment) => setFormData({ ...formData, riskAssessment })}
+            assessment={formData.RiskAssessment}
+            onChange={(RiskAssessment) => setFormData({ ...formData, RiskAssessment })}
           />
         );
       case 'summary':
@@ -202,6 +233,15 @@ export function SoraForm() {
             <button
               onClick={handleNext}
               disabled={!isOperatorInfoValid()}
+              className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continuer
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          ) : currentStep === 'conops' ? (
+            <button
+              onClick={handleNext}
+              disabled={!isOConopsInfoValid()}
               className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Continuer
@@ -242,7 +282,7 @@ export function SoraForm() {
       </div>
 
       <div className="bg-white shadow-lg rounded-lg p-6">
-        
+
         {renderStepContent()}
 
         <div className="flex justify-between mt-8">
@@ -260,6 +300,15 @@ export function SoraForm() {
             <button
               onClick={handleNext}
               disabled={!isOperatorInfoValid()}
+              className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continuer
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          ) : currentStep === 'conops' ? (
+            <button
+              onClick={handleNext}
+              disabled={!isOConopsInfoValid()}
               className="ml-auto flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Continuer

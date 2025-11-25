@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.5",
+    "@tinymce/tinymce-react": "^6.3.0",
     "@tmcw/togeojson": "^5.8.1",
     "axios": "^1.10.0",
     "docx-templates": "^4.14.1",

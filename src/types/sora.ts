@@ -1,4 +1,4 @@
-export type DroneClass = 'Sans' | 'C1' | 'C2' | 'C3' | 'C4' | 'C5' | 'C6' | 'Prototype';
+export type DroneClass = 'Sans' | 'C1' | 'C2' | 'C3' | 'C4' | 'C5' | 'C6' | 'Prototype' | 'Specifique' | 'Certifie';
 
 export type SailLevel =
   | 'SAIL 1'
@@ -15,7 +15,8 @@ export type UasType =
   | 'Multirotor'
   | 'Hybride/VTOL'
   | "Plus léger que l'air"
-  | 'Autre';
+  | 'Autre'
+  | null;
 export type OperationType =
   | 'VLOS – Vol en vue'
   | 'EVLOS – Vol en vue Etendue'
@@ -37,7 +38,7 @@ export type reduceImpactAttenuation = 'Non' | 'Oui, faible' | 'Oui, moyenne' | '
 export type OperationalVolumeLevel = 'ARC-a' | 'ARC-b' | 'ARC-c' | 'ARC-d';
 export type AdjacentVolumeLevel = 'ARC-a' | 'ARC-b' | 'ARC-c' | 'ARC-d';
 export type OperationalScenario = 'VLOS' | 'BVLOS';
-export type PopulationDensity = 'Zone Contrôlée' | '<5' | '<50' | '<500' | '<5,000' | '<50,000' | '>50,000' ;
+export type PopulationDensity = 'Zone Contrôlée' | '<5' | '<50' | '<500' | '<5,000' | '<50,000' | '>50,000';
 export type airspaceClasses = 'Classe A' | 'Classe B' | 'Classe C' | 'Classe D' | 'Classe E' | 'Classe F' | 'Classe G' | 'U-Space' | 'Autre | Préciser';
 export type ContingencyParachuteManeuver = 'OUI' | 'NON';
 export type AirCollisionRiskMap = 'OUI' | 'NON';
@@ -53,12 +54,12 @@ export type TacticalMitigationAvailable = 'OUI' | 'NON';
 export type assessmentTypeHauteurVol =
   | 'Hauteur de vol suivant trajectoire(s)'
   | 'Hauteur de vol en suivi de terrain';
-export type iGRC = '1' | '2' | '3' | '4' | '5' | '6' | '7'| '8';
-export type GRC_Final = '1' | '2' | '3' | '4' | '5' | '6' | '7'| '8';
+export type iGRC = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8';
+export type GRC_Final = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8';
 export type assessmentCriticalArea =
   | 'Calcul selon les Modèles JARUS'
   | 'Spécifiée par le déposant';
-export type assessmentiGRC =  
+export type assessmentiGRC =
   | 'Calcul selon les tables SORA'
   | 'Calcul DROSERA'
   | 'Spécifiée par le déposant';
@@ -92,7 +93,7 @@ export interface EnvironmentalLimitations {
 export interface DroneInfo {
   manufacturer: string;
   model: string;
-  uasType: UasType;
+  uasType: UasType | null;
   serialNumber: string;
   typeCertificateNumber: string;
   airworthinessCertificateNumber: string;
@@ -124,16 +125,17 @@ export interface DroneInfo {
 
 export interface OperationInfo {
   adjacentAreaExtent: number;
-  operationType: OperationType;
+  operationType: OperationType | null;
   visualObserversCount: number;
-  dangerousGoods: DangerousGoods;
+  dangerousGoods: DangerousGoods | null;
   maxOperationHeight: number;
-  dayNightOperation: DayNightOperation;
+  dayNightOperation: DayNightOperation | null;
   operationStartTime: string;
   operationEndTime: string;
   maxDistanceFromPilot: number;
   confinementLevel: ConfinementLevel;
   pilotCompetency: string;
+  SimpleDescription: string;
   otherPersonnelCompetency: string;
   reportableEvents: string;
   geoFiles: File[];
@@ -212,23 +214,23 @@ export interface RiskAssessmentInfo {
   minSpeed: number;
   ObstaclesModulation: ObstaclesModulation;
   GlidingCapability: GlidingCapability;
-  HighImpactAngle:HighImpactAngle;
+  HighImpactAngle: HighImpactAngle;
   dGlide: number;
   dSlideReduced: number;
   vhorizontale: number;
   vnonlethal: number;
   tsafe: number;
-  DetailedJarusModel:DetailedJarusModel;
+  DetailedJarusModel: DetailedJarusModel;
   ThetaGlide: number;
   MTOW: number;
   Theta_Glide_Justification: string;
   UserCriticalArea_Justification: string;
   FlightGeographyWidth: number;
   FlightGeographyHeight: number;
-  FlightGeography_Justification: string; 
+  FlightGeography_Justification: string;
   ContingencyVolumeWidth: number;
   ContingencyVolumeHeight: number;
-  ContingencyVolume_Justification: string; 
+  ContingencyVolume_Justification: string;
   PopulationDensity_Justification: string;
   ContingencyVolumeSGPS: number;
   ContingencyVolumeSpos: number;
@@ -237,9 +239,9 @@ export interface RiskAssessmentInfo {
   ContingencyTimeRZ: number;
   ContingencyVolumeParachute: boolean;
   ContingencyVolumeSCM: number;
-  ContingencyParachuteManeuver:ContingencyParachuteManeuver;
-  UsemaxCharacteristicDimension:UsemaxCharacteristicDimension;
-  AdjacentVolumeWidthEqualMaxRange:AdjacentVolumeWidthEqualMaxRange;
+  ContingencyParachuteManeuver: ContingencyParachuteManeuver;
+  UsemaxCharacteristicDimension: UsemaxCharacteristicDimension;
+  AdjacentVolumeWidthEqualMaxRange: AdjacentVolumeWidthEqualMaxRange;
   ParachuteTime: number;
   VzParachute: number;
   VwindParachute: number;
@@ -251,13 +253,13 @@ export interface RiskAssessmentInfo {
   ContingencyVolumeHbaro: number;
   ContingencyVolumeHRZ: number;
   ContingencyVolumeHCM: number;
-  assessmentGRB:assessmentGRB;
+  assessmentGRB: assessmentGRB;
   GRB: number;
   AdjacentVolumeWidth: number;
   AdjacentVolumeHeight: number;
   GRBWidth: number;
   GRB_Justification: string;
-  GRB_FixedWingPowerOff:GRB_FixedWingPowerOff;
+  GRB_FixedWingPowerOff: GRB_FixedWingPowerOff;
   environmentalLimitations: EnvironmentalLimitations;
   MinOperationalAltitude: number;
   ThetaImpact: number;
@@ -271,8 +273,8 @@ export interface RiskAssessmentInfo {
   AEC: string;
   ARCI: string;
   OpsEnv: string;
-  OutdoorAssembliesAllowed:OutdoorAssembliesAllowed;
-  ShelterApplicable:ShelterApplicable;
+  OutdoorAssembliesAllowed: OutdoorAssembliesAllowed;
+  ShelterApplicable: ShelterApplicable;
   OSOS_Levels: OsoRobustnessLevel[];
 }
 
@@ -356,5 +358,6 @@ export interface SoraForm {
   operation: OperationInfo;
   mitigationMeasures: MitigationMeasure[];
   osos: Oso[];
-  riskAssessment: RiskAssessmentInfo;
+  ARCInitial: DeterminationARCInitialInfo;
+  RiskAssessment: RiskAssessmentInfo;
 }

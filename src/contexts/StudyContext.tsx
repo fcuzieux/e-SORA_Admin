@@ -24,21 +24,13 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
       ...initialSoraForm.operation,
       operationStartTime: '',
     },
-    riskAssessment: {
-      ...initialSoraForm.riskAssessment,
+    RiskAssessment: {
+      ...initialSoraForm.RiskAssessment,
       assessmentStartTime: '',
       uasType: 'Avion',
-      mitigationStrategique: '', // Add mitigationStrategique to the initial state
-    },
-    determinationARCInitial: {
-      airspaceClasses: [],
-      uspaceProvider: '',
-      otherDetails: '',
-      OperationalVolumeLevel: 'ARC-a',
-      AdjacentVolumeLevel: 'ARC-a',
-      detectAndAvoid: '',
-      trafficDetection: '',
-      additionalDetails: '',
+      mitigationStrategiqueM1A: 'Non',
+      mitigationStrategiqueM1B: 'Non',
+      mitigationTactiqueM1C: 'Non',
     },
   });
   const [saving, setSaving] = useState(false);
