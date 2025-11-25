@@ -91,14 +91,9 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
               height: 300,
             }}
             value={operation.SimpleDescription}
-
-            // onEditorChange={(e) =>
-            //   onChange({ ...operation, SimpleDescription: e })
-            // }
-            onChange={(e) =>
-              onChange({ ...operation, SimpleDescription: e.target.value })
+            onEditorChange={(content: string) =>
+              onChange({ ...operation, SimpleDescription: content })
             }
-
           />
 
         </div>

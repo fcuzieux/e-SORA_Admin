@@ -55,9 +55,9 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
     MTOW: drone.MTOW <= 0,
     maxWindSpeedTakeoff: drone.environmentalLimitations.maxWindSpeedTakeoff <= 0,
     maxGustSpeed: drone.environmentalLimitations.maxGustSpeed <= 0,
-    minTemperature: drone.environmentalLimitations.minTemperature === 0,
-    maxTemperature: drone.environmentalLimitations.maxTemperature <= 0,
-    visibility: drone.environmentalLimitations.visibility <= 0,
+    minTemperature: drone.environmentalLimitations.minTemperature === -999,
+    maxTemperature: drone.environmentalLimitations.maxTemperature === 999,
+    visibility: drone.environmentalLimitations.visibility === -999,
   }), [drone]);
 
   const getInputClassName = (fieldName: keyof typeof errors) => {
@@ -465,6 +465,8 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             <input
               type="number"
               value={drone.environmentalLimitations.minTemperature}
+              min={-100}
+              max={25}
               onChange={(e) => onChange({
                 ...drone,
                 environmentalLimitations: {
@@ -483,6 +485,8 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             <input
               type="number"
               value={drone.environmentalLimitations.maxTemperature}
+              min={-100}
+              max={100}
               onChange={(e) => onChange({
                 ...drone,
                 environmentalLimitations: {

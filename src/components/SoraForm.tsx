@@ -68,9 +68,9 @@ export function SoraForm() {
       drone.MTOW > 0 &&
       drone.environmentalLimitations.maxWindSpeedTakeoff >= 0 &&
       drone.environmentalLimitations.maxGustSpeed >= 0 &&
-      drone.environmentalLimitations.minTemperature >= 0 &&
-      drone.environmentalLimitations.maxTemperature >= 0 &&
-      drone.environmentalLimitations.visibility >= 0 &&
+      drone.environmentalLimitations.minTemperature != -999 &&
+      drone.environmentalLimitations.maxTemperature != 999 &&
+      drone.environmentalLimitations.visibility != -999 &&
       operation.operationType !== null &&
       operation.dangerousGoods !== null &&
       operation.dayNightOperation !== null &&

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Editor } from '@tinymce/tinymce-react';
 import { OperatorInfo } from '../../types/sora';
 import { Tooltip } from '../common/Tooltip';
 import { Calendar } from 'lucide-react';
@@ -177,13 +178,32 @@ export function OperatorForm({ operator, onChange }: OperatorFormProps) {
             <label className={getLabelClassName('locations')}>
               Lieu(x) prévu(s) pour l'opération
             </label>
-            <textarea
+            {/* <textarea
               value={operator.locations || ''}
               onChange={(e) => onChange({ ...operator, locations: e.target.value })}
               rows={3}
               className={getInputClassName('locations')}
               placeholder="Saisissez les lieux prévus pour l'opération..."
+            /> */}
+            <Editor
+              // tinymceScriptSrc="/tinymce/tinymce.min.js"
+              apiKey={process.env.REACT_APP_TINYMCE_KEY}
+              init={{
+                menubar: false,
+                toolbar: 'undo redo | bold italic strikethrough | bullist numlist | alignleft aligncenter alignright outdent indent',
+                height: 300,
+              }}
+              value={operator.locations || ''}
+
+              // onEditorChange={(e) =>
+              //   onChange({ ...operator, locations: e })
+              // }
+              onEditorChange={(content: string) => onChange({ ...operator, locations: content })}
+              className={getInputClassName('locations')}
+              placeholder="Saisissez les lieux prévus pour l'opération..."
+
             />
+
           </div>
 
           <div className="md:col-span-2">
