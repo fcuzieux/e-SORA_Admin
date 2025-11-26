@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 import {
   OperationInfo,
@@ -20,6 +20,45 @@ interface OperationFormProps {
 }
 const operationType = ['VLOS – Vol en vue', 'EVLOS – Vol en vue Etendue', 'BVLOS – Vol hors vue'];
 export function OperationForm({ operation, onChange }: OperationFormProps) {
+  const [loadingFiles, setLoadingFiles] = useState(false);
+
+  // Charger les fichiers depuis les URLs lors du chargement initial
+  useEffect(() => {
+    const loadFilesFromUrls = async () => {
+      if (!operation.geoFileUrls || operation.geoFileUrls.length === 0) {
+        return;
+      }
+
+      // Ne charger que si nous n'avons pas déjà les fichiers
+      if (operation.geoFiles && operation.geoFiles.length > 0) {
+        return;
+      }
+
+      setLoadingFiles(true);
+      try {
+        const { urlToFile } = await import('../../lib/storageService');
+
+        const filePromises = operation.geoFileUrls.map((url, index) => {
+          const fileName = url.split('/').pop() || `file_${index}`;
+          return urlToFile(url, fileName);
+        });
+
+        const files = await Promise.all(filePromises);
+        const validFiles = files.filter((file): file is File => file !== null);
+
+        if (validFiles.length > 0) {
+          onChange({ ...operation, geoFiles: validFiles });
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des fichiers:', error);
+      } finally {
+        setLoadingFiles(false);
+      }
+    };
+
+    loadFilesFromUrls();
+  }, [operation.geoFileUrls]); // Dépendance uniquement sur les URLs
+
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -546,7 +585,9 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
             >
               <Upload className="w-5 h-5 text-gray-400" />
               <span className="text-gray-600">
-                Déposer des fichiers KML, KMZ ou GeoJSON ici
+                {loadingFiles
+                  ? 'Chargement des fichiers...'
+                  : 'Déposer des fichiers KML, KMZ ou GeoJSON ici'}
               </span>
             </label>
           </div>
