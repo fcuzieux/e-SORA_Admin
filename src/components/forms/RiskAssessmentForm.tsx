@@ -32,8 +32,9 @@ export function RiskAssessmentForm({
         return;
       }
 
-      // Ne charger que si nous n'avons pas déjà les fichiers
-      if (assessment.trajgeoFiles && assessment.trajgeoFiles.length > 0) {
+      // Ne charger que si le nombre de fichiers ne correspond pas au nombre d'URLs
+      const currentFileCount = assessment.trajgeoFiles?.length || 0;
+      if (currentFileCount === assessment.trajgeoFileUrls.length) {
         return;
       }
 
@@ -69,8 +70,9 @@ export function RiskAssessmentForm({
         return;
       }
 
-      // Ne charger que si nous n'avons pas déjà les fichiers
-      if (assessment.droseraOutputFile && assessment.droseraOutputFile.length > 0) {
+      // Ne charger que si le nombre de fichiers ne correspond pas au nombre d'URLs
+      const currentFileCount = assessment.droseraOutputFile?.length || 0;
+      if (currentFileCount === assessment.droseraOutputFileUrls.length) {
         return;
       }
 

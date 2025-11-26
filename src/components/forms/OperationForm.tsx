@@ -29,9 +29,10 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
         return;
       }
 
-      // Ne charger que si nous n'avons pas déjà les fichiers
-      if (operation.geoFiles && operation.geoFiles.length > 0) {
-        return;
+      // Ne charger que si le nombre de fichiers ne correspond pas au nombre d'URLs
+      const currentFileCount = operation.geoFiles?.length || 0;
+      if (currentFileCount === operation.geoFileUrls.length) {
+        return; // Tous les fichiers sont déjà chargés
       }
 
       setLoadingFiles(true);

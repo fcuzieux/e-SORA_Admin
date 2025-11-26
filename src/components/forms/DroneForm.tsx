@@ -51,8 +51,9 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
         return;
       }
 
-      // Ne charger que si nous n'avons pas déjà les fichiers
-      if (drone.technicalDocuments && drone.technicalDocuments.length > 0) {
+      // Ne charger que si le nombre de fichiers ne correspond pas au nombre d'URLs
+      const currentFileCount = drone.technicalDocuments?.length || 0;
+      if (currentFileCount === drone.technicalDocumentUrls.length) {
         return;
       }
 
