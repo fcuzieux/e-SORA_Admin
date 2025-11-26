@@ -102,6 +102,7 @@ export interface DroneInfo {
   airworthinessCertificateNumber: string;
   acousticCertificateNumber: string;
   technicalDocuments: File[];
+  technicalDocumentUrls?: string[]; // URLs des fichiers uploadés dans Supabase Storage
   MTOW: number;
   CruiseSpeed: number;
   VCruise: number;

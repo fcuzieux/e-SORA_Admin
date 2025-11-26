@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Save } from 'lucide-react';
 import { useStudyContext } from '../contexts/StudyContext';
 import { supabase } from '../lib/supabase';
@@ -20,13 +20,39 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
     setError(null);
 
     try {
+      // Préparer les données pour la sauvegarde
+      let dataToSave = { ...formData };
+
+      // Si nous avons un studyId, uploader les nouveaux fichiers du drone
+      if (studyId && formData.drone.technicalDocuments && formData.drone.technicalDocuments.length > 0) {
+        const { uploadMultipleFiles } = await import('../lib/storageService');
+
+        // Upload les nouveaux fichiers
+        const uploadedUrls = await uploadMultipleFiles(
+          formData.drone.technicalDocuments,
+          studyId,
+          'drone-photos'
+        );
+
+        // Combiner avec les URLs existantes
+        const existingUrls = formData.drone.technicalDocumentUrls || [];
+        dataToSave = {
+          ...dataToSave,
+          drone: {
+            ...dataToSave.drone,
+            technicalDocumentUrls: [...existingUrls, ...uploadedUrls],
+            technicalDocuments: [] // Vider le tableau de fichiers après upload
+          }
+        };
+      }
+
       if (studyId) {
         // For super agents, don't restrict by user_id in the WHERE clause
         let updateQuery = supabase
           .from('sora_studies')
           .update({
             name: studyName,
-            data: formData,
+            data: dataToSave,
             updated_at: new Date().toISOString()
           })
           .eq('id', studyId);
@@ -44,7 +70,7 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
           .from('sora_studies')
           .insert({
             name: studyName,
-            data: formData,
+            data: dataToSave,
             user_id: user.id
           })
           .select()
@@ -53,6 +79,32 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
         if (insertError) throw insertError;
         if (insertData) {
           setStudyId(insertData.id);
+
+          // Si nous avons des fichiers à uploader après la création de l'étude
+          if (formData.drone.technicalDocuments && formData.drone.technicalDocuments.length > 0) {
+            const { uploadMultipleFiles } = await import('../lib/storageService');
+
+            const uploadedUrls = await uploadMultipleFiles(
+              formData.drone.technicalDocuments,
+              insertData.id,
+              'drone-photos'
+            );
+
+            // Mettre à jour l'étude avec les URLs des fichiers
+            const updatedData = {
+              ...dataToSave,
+              drone: {
+                ...dataToSave.drone,
+                technicalDocumentUrls: uploadedUrls,
+                technicalDocuments: []
+              }
+            };
+
+            await supabase
+              .from('sora_studies')
+              .update({ data: updatedData })
+              .eq('id', insertData.id);
+          }
         }
       }
     } catch (error) {
@@ -75,8 +127,8 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
         onClick={handleSave}
         disabled={saving || !studyName || !user}
         className={`flex items-center gap-2 px-6 py-3 rounded-full shadow-lg transition-all transform hover:scale-105 ${saving || !user
-            ? 'bg-gray-300 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-xl'
+          ? 'bg-gray-300 cursor-not-allowed'
+          : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-xl'
           } ${className}`}
       >
         <Save className="w-5 h-5" />
