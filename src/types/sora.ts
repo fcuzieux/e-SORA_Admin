@@ -149,6 +149,7 @@ export interface OperationInfo {
   otherPersonnelCompetency: string;
   reportableEvents: string;
   geoFiles: File[];
+  geoFileUrls?: string[]; // URLs des fichiers géographiques uploadés dans Supabase Storage
 }
 
 export interface RiskAssessmentInfo {
@@ -181,7 +182,9 @@ export interface RiskAssessmentInfo {
   airRisk?: number;
   sailLevel?: string;
   trajgeoFiles: File[];
+  trajgeoFileUrls?: string[]; // URLs des fichiers de trajectoire uploadés dans Supabase Storage
   droseraOutputFile: File[];
+  droseraOutputFileUrls?: string[]; // URLs des fichiers de sortie Drosera uploadés dans Supabase Storage
   mitigationStrategiqueM1A: mitigationStrategique;
   mitigationStrategiqueM1B: mitigationStrategique;
   mitigationTactiqueM1C: mitigationStrategique;

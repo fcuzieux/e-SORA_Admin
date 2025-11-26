@@ -1,8 +1,12 @@
-# Sauvegarde des images dans Supabase - Guide rapide
+# Sauvegarde des fichiers dans Supabase - Guide rapide
 
 ## Résumé de la solution
 
-Cette solution permet de sauvegarder les images et documents techniques du formulaire DroneForm dans Supabase Storage.
+Cette solution permet de sauvegarder tous les fichiers de l'application dans Supabase Storage :
+- **Images du drone** (DroneForm) : Photos et descriptions schématiques (PNG, JPG, JPEG)
+- **Fichiers géographiques de l'opération** (OperationForm) : Zones et trajectoires (KML, KMZ, GeoJSON)
+- **Fichiers de trajectoire** (GroundRiskInitial) : Fichiers pour l'analyse de risque (KML, KMZ, GeoJSON)
+- **Fichiers de sortie Drosera** (GroundRiskInitial) : Résultats d'analyse (HTML)
 
 ## Fichiers modifiés/créés
 
@@ -11,9 +15,11 @@ Cette solution permet de sauvegarder les images et documents techniques du formu
 2. **`docs/SUPABASE_STORAGE_SETUP.md`** - Documentation complète de configuration
 
 ### Fichiers modifiés
-1. **`src/types/sora.ts`** - Ajout du champ `technicalDocumentUrls` à l'interface `DroneInfo`
-2. **`src/components/SaveButton.tsx`** - Ajout de la logique d'upload des fichiers
-3. **`src/components/forms/DroneForm.tsx`** - Ajout du chargement des fichiers existants
+1. **`src/types/sora.ts`** - Ajout des champs `technicalDocumentUrls`, `geoFileUrls`, `trajgeoFileUrls` et `droseraOutputFileUrls`
+2. **`src/components/SaveButton.tsx`** - Ajout de la logique d'upload pour tous les types de fichiers
+3. **`src/components/forms/DroneForm.tsx`** - Ajout du chargement des fichiers images existants
+4. **`src/components/forms/OperationForm.tsx`** - (À faire) Ajout du chargement des fichiers géographiques existants
+5. **`src/components/forms/GroundRiskInitial.tsx`** - (À faire) Ajout du chargement des fichiers de trajectoire et Drosera existants
 
 ## Configuration requise dans Supabase
 
@@ -21,8 +27,13 @@ Cette solution permet de sauvegarder les images et documents techniques du formu
 ```
 Nom: drone-documents
 Type: Public
-Taille limite: 500 KB
-Types MIME: image/png, image/jpeg, image/jpg
+Taille limite: 10 MB
+Types MIME: 
+  - image/png, image/jpeg, image/jpg (images)
+  - application/vnd.google-earth.kml+xml (KML)
+  - application/vnd.google-earth.kmz (KMZ)
+  - application/geo+json, application/json (GeoJSON)
+  - text/html (Drosera)
 ```
 
 ### 2. Configurer les politiques RLS

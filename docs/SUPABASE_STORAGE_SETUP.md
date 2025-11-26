@@ -14,8 +14,13 @@ Ce document explique comment configurer Supabase Storage pour sauvegarder les im
 4. Configurez le bucket avec les paramètres suivants :
    - **Name**: `drone-documents`
    - **Public bucket**: Cochez cette option pour permettre l'accès public aux fichiers
-   - **File size limit**: 500 KB (ou selon vos besoins)
-   - **Allowed MIME types**: `image/png`, `image/jpeg`, `image/jpg`
+   - **File size limit**: 10 MB (pour supporter les fichiers KML/KMZ)
+   - **Allowed MIME types**: 
+     - `image/png`, `image/jpeg`, `image/jpg` (images du drone)
+     - `application/vnd.google-earth.kml+xml` (fichiers KML)
+     - `application/vnd.google-earth.kmz` (fichiers KMZ)
+     - `application/geo+json`, `application/json` (fichiers GeoJSON)
+     - `text/html` (fichiers de sortie Drosera)
 
 ### 2. Configurer les politiques de sécurité (RLS)
 
@@ -68,18 +73,31 @@ Les fichiers sont organisés selon la structure suivante :
 ```
 drone-documents/
   └── {studyId}/
-      └── drone-photos/
-          └── {timestamp}_{filename}
+      ├── drone-photos/
+      │   └── {timestamp}_{filename}.jpg|png
+      ├── operation-geo-files/
+      │   └── {timestamp}_{filename}.kml|kmz|geojson
+      ├── risk-assessment-traj-files/
+      │   └── {timestamp}_{filename}.kml|kmz|geojson
+      └── drosera-output-files/
+          └── {timestamp}_{filename}.html
 ```
 
 Exemple :
 ```
 drone-documents/
   └── 123e4567-e89b-12d3-a456-426614174000/
-      └── drone-photos/
-          ├── 1701234567890_drone_front.jpg
-          ├── 1701234567891_drone_side.jpg
-          └── 1701234567892_schema.png
+      ├── drone-photos/
+      │   ├── 1701234567890_drone_front.jpg
+      │   ├── 1701234567891_drone_side.jpg
+      │   └── 1701234567892_schema.png
+      ├── operation-geo-files/
+      │   ├── 1701234567893_zone_operation.kml
+      │   └── 1701234567894_trajectory.kmz
+      ├── risk-assessment-traj-files/
+      │   └── 1701234567895_Trajectoire_Mission1.kml
+      └── drosera-output-files/
+          └── 1701234567896_drosera_output.html
 ```
 
 ## Fonctionnement du système
