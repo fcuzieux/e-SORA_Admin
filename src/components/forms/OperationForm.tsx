@@ -554,25 +554,27 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
 
         {operation.geoFiles && operation.geoFiles.length > 0 && (
           <div className="mt-4 space-y-2">
-            {operation.geoFiles.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-2 bg-gray-50 rounded"
-              >
-                <span className="text-sm text-gray-600 flex items-center gap-2">
-                  {file.name}
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                    {file.name.split('.').pop()?.toUpperCase()}
-                  </span>
-                </span>
-                <button
-                  onClick={() => handleRemoveFile(index)}
-                  className="text-red-500 hover:text-red-700"
+            {operation.geoFiles
+              .filter((file): file is File => file !== null && file !== undefined && file instanceof File)
+              .map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-2 bg-gray-50 rounded"
                 >
-                  Supprimer
-                </button>
-              </div>
-            ))}
+                  <span className="text-sm text-gray-600 flex items-center gap-2">
+                    {file.name}
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                      {file.name.split('.').pop()?.toUpperCase()}
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => handleRemoveFile(index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              ))}
           </div>
         )}
 

@@ -41,13 +41,13 @@ export function OperationMap({ geoFiles }: OperationMapProps) {
 
   const extractBounds = useCallback((geoJson: any): [number, number][] => {
     const bounds: [number, number][] = [];
-    
+
     if (!geoJson || !geoJson.features) return bounds;
 
     geoJson.features.forEach((feature: any) => {
       if (feature.geometry && feature.geometry.coordinates) {
         const coords = feature.geometry.coordinates;
-        
+
         switch (feature.geometry.type) {
           case 'Point':
             if (Array.isArray(coords) && coords.length >= 2) {
@@ -94,7 +94,7 @@ export function OperationMap({ geoFiles }: OperationMapProps) {
 
   const extractGroundOverlayBounds = useCallback((groundOverlays: GroundOverlay[]): [number, number][] => {
     const bounds: [number, number][] = [];
-    
+
     groundOverlays.forEach(overlay => {
       bounds.push([overlay.bounds.north, overlay.bounds.east]);
       bounds.push([overlay.bounds.south, overlay.bounds.west]);
@@ -119,7 +119,14 @@ export function OperationMap({ geoFiles }: OperationMapProps) {
 
   useEffect(() => {
     const loadFiles = async () => {
-      if (geoFiles.length === 0) {
+      // Filtrer les fichiers valides (ignorer undefined, null, etc.)
+      const validFiles = geoFiles.filter((file): file is File =>
+        file !== null &&
+        file !== undefined &&
+        file instanceof File
+      );
+
+      if (validFiles.length === 0) {
         setLayers([]);
         setMapBounds([[46.227638, 2.213749]]);
         setZoom(5);
@@ -136,17 +143,17 @@ export function OperationMap({ geoFiles }: OperationMapProps) {
 
       setLoading(true);
       setError(null);
-      
+
       try {
         const newLayers: LayerData[] = [];
         const newProcessedImages: any[] = [];
         let allBounds: [number, number][] = [];
         let colorIndex = 0;
 
-        for (const file of geoFiles) {
+        for (const file of validFiles) {
           try {
             const processedFiles = await processGeoFile(file);
-            
+
             processedFiles.forEach((processedFile: ProcessedGeoFile) => {
               const fileBounds = extractBounds(processedFile.data);
               allBounds = [...allBounds, ...fileBounds];
@@ -170,7 +177,7 @@ export function OperationMap({ geoFiles }: OperationMapProps) {
               if (processedFile.images) {
                 newProcessedImages.push(processedFile.images);
               }
-              
+
               colorIndex++;
             });
           } catch (fileError) {
@@ -199,9 +206,9 @@ export function OperationMap({ geoFiles }: OperationMapProps) {
 
   const center = mapBounds.length > 1
     ? ([
-        mapBounds.reduce((sum, coord) => sum + coord[0], 0) / mapBounds.length,
-        mapBounds.reduce((sum, coord) => sum + coord[1], 0) / mapBounds.length,
-      ] as [number, number])
+      mapBounds.reduce((sum, coord) => sum + coord[0], 0) / mapBounds.length,
+      mapBounds.reduce((sum, coord) => sum + coord[1], 0) / mapBounds.length,
+    ] as [number, number])
     : ([46.227638, 2.213749] as [number, number]);
 
   return (
@@ -214,7 +221,7 @@ export function OperationMap({ geoFiles }: OperationMapProps) {
           </div>
         </div>
       )}
-      
+
       {loading && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <div className="text-sm text-blue-700 flex items-center gap-2">
@@ -293,8 +300,8 @@ export function OperationMap({ geoFiles }: OperationMapProps) {
           <ul className="mt-1 space-y-1">
             {layers.map((layer) => (
               <li key={layer.id} className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
+                <div
+                  className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: layer.color }}
                 ></div>
                 <span>{layer.name} ({layer.type.toUpperCase()})</span>
@@ -311,7 +318,7 @@ export function OperationMap({ geoFiles }: OperationMapProps) {
               </li>
             ))}
           </ul>
-          
+
           {/* Debug information */}
           <div className="mt-2 text-xs text-gray-500">
             <details>
