@@ -76,6 +76,13 @@ export type assessmentContingencyVolume =
   | 'Calcul selon le Guide';
 
 export type OsoRobustnessLevel = 'Non Requis' | 'Faible' | 'Moyen' | 'Élevé';
+
+export interface FileMetadata {
+  name: string;
+  url: string;
+  size: number;
+  type: string;
+}
 export interface DroneDimensions {
   length: number;
   width: number;
@@ -100,7 +107,7 @@ export interface DroneInfo {
   typeCertificateNumber: string;
   airworthinessCertificateNumber: string;
   acousticCertificateNumber: string;
-  technicalDocuments: File[];
+  technicalDocuments: (File | FileMetadata)[];
   MTOW: number;
   CruiseSpeed: number;
   VCruise: number;
@@ -146,7 +153,7 @@ export interface OperationInfo {
   SimpleDescription: string;
   otherPersonnelCompetency: string;
   reportableEvents: string;
-  geoFiles: File[];
+  geoFiles: (File | FileMetadata)[];
 }
 
 export interface RiskAssessmentInfo {
@@ -164,6 +171,7 @@ export interface RiskAssessmentInfo {
   PopulationDensityDataBase: PopulationDensityDataBase;
   PopulationDensityDataBaseNumber: number;
   assessmentStartTime: string;
+  assessmentEndTime: string;
   CriticalArea: number;
   NominalCriticalArea: number;
   ThresholdCriticalArea: number;
@@ -177,8 +185,8 @@ export interface RiskAssessmentInfo {
   finalGroundRisk?: number;
   airRisk?: number;
   sailLevel?: string;
-  trajgeoFiles: File[];
-  droseraOutputFile: File[];
+  trajgeoFiles: (File | FileMetadata)[];
+  droseraOutputFile: (File | FileMetadata)[];
   mitigationStrategiqueM1A: mitigationStrategique;
   mitigationStrategiqueM1B: mitigationStrategique;
   mitigationTactiqueM1C: mitigationStrategique;

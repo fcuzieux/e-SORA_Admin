@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { DroneInfo, DroneClass, UasType } from '../../types/sora';
+import { DroneInfo, DroneClass, UasType, FileMetadata } from '../../types/sora';
 import { Tooltip } from '../common/Tooltip';
 import { Upload, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -11,10 +11,22 @@ interface DroneFormProps {
 const droneClasses: DroneClass[] = ['Sans', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'Prototype', 'Specifique', 'Certifie'];
 const uasTypes: UasType[] = ['Avion', 'Hélicoptère', 'Multirotor', 'Hybride/VTOL', 'Plus léger que l\'air', 'Autre'];
 
-const FilePreview = ({ file }: { file: File }) => {
+const FilePreview = ({ file }: { file: File | FileMetadata }) => {
   const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check if it's a FileMetadata (has url property)
+    if ('url' in file) {
+      // It's FileMetadata from Supabase
+      if (file.type.startsWith('image/')) {
+        setPreview(file.url);
+      } else {
+        setPreview(null);
+      }
+      return;
+    }
+
+    // It's a File object
     if (!file.type.startsWith('image/')) {
       setPreview(null);
       return;
@@ -28,11 +40,13 @@ const FilePreview = ({ file }: { file: File }) => {
 
   if (!preview) return null;
 
+  const fileName = 'name' in file ? file.name : (file as File).name;
+
   return (
     <div className="flex justify-center bg-gray-100 rounded-lg p-2 mb-2">
       <img
         src={preview}
-        alt={file.name}
+        alt={fileName}
         className="max-h-40 object-contain rounded"
       />
     </div>

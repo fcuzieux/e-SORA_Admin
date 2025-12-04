@@ -20,13 +20,22 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
     setError(null);
 
     try {
+      // Generate a temporary ID for new studies to organize file uploads
+      const currentStudyId = studyId || `temp_${Date.now()}`;
+
+      // Import the file storage utility
+      const { prepareFormDataForSave } = await import('../lib/fileStorage');
+
+      // Prepare form data by uploading files and converting to URLs
+      const preparedData = await prepareFormDataForSave(formData, currentStudyId);
+
       if (studyId) {
-        // For super agents, don't restrict by user_id in the WHERE clause
+        // Update existing study
         let updateQuery = supabase
           .from('sora_studies')
           .update({
             name: studyName,
-            data: formData,
+            data: preparedData,
             updated_at: new Date().toISOString()
           })
           .eq('id', studyId);
@@ -40,11 +49,12 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
 
         if (updateError) throw updateError;
       } else {
+        // Insert new study
         const { data: insertData, error: insertError } = await supabase
           .from('sora_studies')
           .insert({
             name: studyName,
-            data: formData,
+            data: preparedData,
             user_id: user.id
           })
           .select()
@@ -53,6 +63,9 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
         if (insertError) throw insertError;
         if (insertData) {
           setStudyId(insertData.id);
+
+          // If we used a temporary ID, we should rename the files in storage
+          // For now, we'll keep them as-is since they're organized by study ID
         }
       }
     } catch (error) {
@@ -75,8 +88,8 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
         onClick={handleSave}
         disabled={saving || !studyName || !user}
         className={`flex items-center gap-2 px-6 py-3 rounded-full shadow-lg transition-all transform hover:scale-105 ${saving || !user
-            ? 'bg-gray-300 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-xl'
+          ? 'bg-gray-300 cursor-not-allowed'
+          : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-xl'
           } ${className}`}
       >
         <Save className="w-5 h-5" />
