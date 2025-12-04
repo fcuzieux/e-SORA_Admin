@@ -121,7 +121,14 @@ export function OperationMap({ geoFiles }: OperationMapProps) {
 
   useEffect(() => {
     const loadFiles = async () => {
-      if (geoFiles.length === 0) {
+      // Filtrer les fichiers valides (ignorer undefined, null, etc.)
+      const validFiles = geoFiles.filter((file): file is File =>
+        file !== null &&
+        file !== undefined &&
+        file instanceof File
+      );
+
+      if (validFiles.length === 0) {
         setLayers([]);
         setMapBounds([[46.227638, 2.213749]]);
         setZoom(5);

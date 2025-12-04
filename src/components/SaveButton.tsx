@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Save } from 'lucide-react';
 import { useStudyContext } from '../contexts/StudyContext';
 import { supabase } from '../lib/supabase';
@@ -40,14 +40,13 @@ export function SaveButton({ className = '' }: SaveButtonProps) {
           })
           .eq('id', studyId);
 
-        // Only add user_id restriction for regular users
         if (!isSuperAgent) {
           updateQuery = updateQuery.eq('user_id', user.id);
         }
 
         const { error: updateError } = await updateQuery;
-
         if (updateError) throw updateError;
+
       } else {
         // Insert new study
         const { data: insertData, error: insertError } = await supabase

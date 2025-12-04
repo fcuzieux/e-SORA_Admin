@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 import {
   OperationInfo,
@@ -20,6 +20,46 @@ interface OperationFormProps {
 }
 const operationType = ['VLOS – Vol en vue', 'EVLOS – Vol en vue Etendue', 'BVLOS – Vol hors vue'];
 export function OperationForm({ operation, onChange }: OperationFormProps) {
+  const [loadingFiles, setLoadingFiles] = useState(false);
+
+  // Charger les fichiers depuis les URLs lors du chargement initial
+  useEffect(() => {
+    const loadFilesFromUrls = async () => {
+      if (!operation.geoFileUrls || operation.geoFileUrls.length === 0) {
+        return;
+      }
+
+      // Ne charger que si le nombre de fichiers ne correspond pas au nombre d'URLs
+      const currentFileCount = operation.geoFiles?.length || 0;
+      if (currentFileCount === operation.geoFileUrls.length) {
+        return; // Tous les fichiers sont déjà chargés
+      }
+
+      setLoadingFiles(true);
+      try {
+        const { urlToFile } = await import('../../lib/storageService');
+
+        const filePromises = operation.geoFileUrls.map((url, index) => {
+          const fileName = url.split('/').pop() || `file_${index}`;
+          return urlToFile(url, fileName);
+        });
+
+        const files = await Promise.all(filePromises);
+        const validFiles = files.filter((file): file is File => file !== null);
+
+        if (validFiles.length > 0) {
+          onChange({ ...operation, geoFiles: validFiles });
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des fichiers:', error);
+      } finally {
+        setLoadingFiles(false);
+      }
+    };
+
+    loadFilesFromUrls();
+  }, [operation.geoFileUrls]); // Dépendance uniquement sur les URLs
+
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -546,7 +586,9 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
             >
               <Upload className="w-5 h-5 text-gray-400" />
               <span className="text-gray-600">
-                Déposer des fichiers KML, KMZ ou GeoJSON ici
+                {loadingFiles
+                  ? 'Chargement des fichiers...'
+                  : 'Déposer des fichiers KML, KMZ ou GeoJSON ici'}
               </span>
             </label>
           </div>
@@ -554,25 +596,27 @@ export function OperationForm({ operation, onChange }: OperationFormProps) {
 
         {operation.geoFiles && operation.geoFiles.length > 0 && (
           <div className="mt-4 space-y-2">
-            {operation.geoFiles.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-2 bg-gray-50 rounded"
-              >
-                <span className="text-sm text-gray-600 flex items-center gap-2">
-                  {file.name}
-                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                    {file.name.split('.').pop()?.toUpperCase()}
-                  </span>
-                </span>
-                <button
-                  onClick={() => handleRemoveFile(index)}
-                  className="text-red-500 hover:text-red-700"
+            {operation.geoFiles
+              .filter((file): file is File => file !== null && file !== undefined && file instanceof File)
+              .map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-2 bg-gray-50 rounded"
                 >
-                  Supprimer
-                </button>
-              </div>
-            ))}
+                  <span className="text-sm text-gray-600 flex items-center gap-2">
+                    {file.name}
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                      {file.name.split('.').pop()?.toUpperCase()}
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => handleRemoveFile(index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Supprimer
+                  </button>
+                </div>
+              ))}
           </div>
         )}
 

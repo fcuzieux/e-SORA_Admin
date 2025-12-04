@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   RiskAssessmentInfo,
   assessmentTypeHauteurVol,
@@ -22,7 +22,82 @@ export function RiskAssessmentForm({
   showOnly,
 }: RiskAssessmentFormProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loadingFiles, setLoadingFiles] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Charger les fichiers de trajectoire depuis les URLs
+  useEffect(() => {
+    const loadFilesFromUrls = async () => {
+      if (!assessment.trajgeoFileUrls || assessment.trajgeoFileUrls.length === 0) {
+        return;
+      }
+
+      // Ne charger que si le nombre de fichiers ne correspond pas au nombre d'URLs
+      const currentFileCount = assessment.trajgeoFiles?.length || 0;
+      if (currentFileCount === assessment.trajgeoFileUrls.length) {
+        return;
+      }
+
+      setLoadingFiles(true);
+      try {
+        const { urlToFile } = await import('../../lib/storageService');
+
+        const filePromises = assessment.trajgeoFileUrls.map((url, index) => {
+          const fileName = url.split('/').pop() || `file_${index}`;
+          return urlToFile(url, fileName);
+        });
+
+        const files = await Promise.all(filePromises);
+        const validFiles = files.filter((file): file is File => file !== null);
+
+        if (validFiles.length > 0) {
+          onChange({ ...assessment, trajgeoFiles: validFiles });
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des fichiers de trajectoire:', error);
+      } finally {
+        setLoadingFiles(false);
+      }
+    };
+
+    loadFilesFromUrls();
+  }, [assessment.trajgeoFileUrls]); // Dépendance uniquement sur les URLs
+
+  // Charger les fichiers Drosera depuis les URLs
+  useEffect(() => {
+    const loadDroseraFilesFromUrls = async () => {
+      if (!assessment.droseraOutputFileUrls || assessment.droseraOutputFileUrls.length === 0) {
+        return;
+      }
+
+      // Ne charger que si le nombre de fichiers ne correspond pas au nombre d'URLs
+      const currentFileCount = assessment.droseraOutputFile?.length || 0;
+      if (currentFileCount === assessment.droseraOutputFileUrls.length) {
+        return;
+      }
+
+      try {
+        const { urlToFile } = await import('../../lib/storageService');
+
+        const filePromises = assessment.droseraOutputFileUrls.map((url, index) => {
+          const fileName = url.split('/').pop() || `drosera_${index}.html`;
+          return urlToFile(url, fileName);
+        });
+
+        const files = await Promise.all(filePromises);
+        const validFiles = files.filter((file): file is File => file !== null);
+
+        if (validFiles.length > 0) {
+          onChange({ ...assessment, droseraOutputFile: validFiles });
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des fichiers Drosera:', error);
+      }
+    };
+
+    loadDroseraFilesFromUrls();
+  }, [assessment.droseraOutputFileUrls]); // Dépendance uniquement sur les URLs
+
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -106,25 +181,25 @@ export function RiskAssessmentForm({
 
             {assessment.assessmentTypeHauteurVol ===
               'Hauteur de vol en suivi de terrain' && (
-              <div>
-                <Tooltip text="Hauteur qui sera appliquée suivant la topographie terrain.">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Hauteur de la trajectoire
-                  </label>
-                </Tooltip>
-                <input
-                  type="number"
-                  value={assessment.followTerrainHeight}
-                  onChange={(e) =>
-                    onChange({
-                      ...assessment,
-                      followTerrainHeight: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-            )}
+                <div>
+                  <Tooltip text="Hauteur qui sera appliquée suivant la topographie terrain.">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Hauteur de la trajectoire
+                    </label>
+                  </Tooltip>
+                  <input
+                    type="number"
+                    value={assessment.followTerrainHeight}
+                    onChange={(e) =>
+                      onChange({
+                        ...assessment,
+                        followTerrainHeight: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+              )}
 
             <div>
               <Tooltip text=" XXX ">
@@ -193,7 +268,9 @@ export function RiskAssessmentForm({
               >
                 <Upload className="w-5 h-5 text-gray-400" />
                 <span className="text-gray-600">
-                  Déposer des fichiers KML ou GeoJSON ici
+                  {loadingFiles
+                    ? 'Chargement des fichiers...'
+                    : 'Déposer des fichiers KML ou GeoJSON ici'}
                 </span>
               </div>
             </div>
@@ -264,25 +341,25 @@ export function RiskAssessmentForm({
 
             {assessment.assessmentCriticalArea ===
               'Spécifiée par le déposant' && (
-              <div>
-                <Tooltip text="Valeur de la Surface Critique déclarée (m²) A justifier par l'opérateur en annexe ! ">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Valeur de la Surface Critique déclarée (m²)
-                  </label>
-                </Tooltip>
-                <input
-                  type="number"
-                  value={assessment.CriticalArea}
-                  onChange={(e) =>
-                    onChange({
-                      ...assessment,
-                      CriticalArea: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-            )}
+                <div>
+                  <Tooltip text="Valeur de la Surface Critique déclarée (m²) A justifier par l'opérateur en annexe ! ">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Valeur de la Surface Critique déclarée (m²)
+                    </label>
+                  </Tooltip>
+                  <input
+                    type="number"
+                    value={assessment.CriticalArea}
+                    onChange={(e) =>
+                      onChange({
+                        ...assessment,
+                        CriticalArea: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+              )}
           </div>
         </div>
       </section>

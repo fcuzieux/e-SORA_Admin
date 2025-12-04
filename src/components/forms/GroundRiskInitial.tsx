@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FileText, ArrowLeft, ArrowRight } from 'lucide-react';
+import { FileText, ArrowLeft, ArrowRight, Info } from 'lucide-react';
 import {
   RiskAssessmentInfo,
   DroneInfo,
@@ -1063,11 +1063,15 @@ export function GroundRiskInitial({
         <h3 className="text-lg font-medium">
           Determination de l'iGRC : Intrinsic Ground Risk Class
         </h3>
+        <label className="text-sm font-medium">L'ordre des étapes est indiqué par le numéro. Chaque étape doit être remplie dans l'ordre. Seules la première étape Etape 1: Determination de la surface critique de crash (Ac).
+          est optionnelle.</label>
+
         <div className="bg-gray-50 p-4 rounded-lg space-y-4">
 
 
           <h2 className="text-lg font-medium">
-            Etape 1 : Determination de la surface critique de crash (Ac).<button
+            Etape 1 : (Optionnelle) Determination de la surface critique de crash (Ac).
+            <button
               type="button"
               onClick={() => window.open('https://www.easa.europa.eu/sites/default/files/dfu/d2_-_consolidated_gm-for_publication-02052024.pdf', '_blank')}
               className="text-blue-500 hover:text-blue-700 transition-colors"
@@ -1076,6 +1080,7 @@ export function GroundRiskInitial({
               <HelpCircle className="w-4 h-4" />
             </button>
           </h2>
+          <label className="text-sm font-medium">Si vous ne souhaitez pas calculer la surface critique de crash (Ac), vous pouvez simplement sélectionner la méthode "Selon les Tables SORA" pour passer à l'étape suivante.</label>
 
 
           <div>
@@ -1268,8 +1273,11 @@ export function GroundRiskInitial({
                 }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               >
-                <option value="Sélectionner une méthode d'évaluation">
+                <option value="">
                   Sélectionner une méthode d'évaluation
+                </option>
+                <option value="Selon les Tables SORA">
+                  Selon les Tables SORA
                 </option>
                 <option value="Calcul selon les Modèles JARUS">
                   Calcul selon les Modèles JARUS
@@ -1356,10 +1364,25 @@ export function GroundRiskInitial({
             // | "Plus léger que l'air"
             // | 'Autre';              
             <div>
+              <h2 className="text-lg font-medium text-gray-900">
+                Calcul de la Surface Critique selon le modèle JARUS
+              </h2>
+
+              <label className="block text-sm font-medium text-gray-700">
+                <Info className="text-blue-500" /> Vous avez choisi de calculer la Surface Critique selon les Modèles JARUS.
+                <br />
+                La page de calcul JARUS se formate automatiquement selon votre type d'appareil.
+                <br />
+                Les paramètres à renseigner sont marqués d'une (*)
+                <br />
+                <br />
+              </label>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Valeur de la Surface Critique Calculée (m²)
-                </label>
+                <Tooltip text="Le champ ci-dessous affichera la valeur de la Surface Critique Calculée en m² selon la méthode JARUS en prenant en compte vos choix et valeur ci-après.">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Valeur de la Surface Critique Calculée (m²)
+                  </label>
+                </Tooltip>
                 <div className="mt-1 block w-full rounded-md border-black border-2 font-bold shadow-sm focus:border-blue-500 focus:ring-blue-500">
                   {assessment.GlidingCapability === "OUI" || assessment.HighImpactAngle === 'NON' ? (
 
@@ -1846,7 +1869,9 @@ export function GroundRiskInitial({
             //   </div>
           ) : (
             <div>
-
+              Appliquer la Seuil de Surface Critique {assessment.CriticalArea = ThresholdACtable()} m²
+              <br />
+              Et la Classe de Dimension Caractéristique Max. Applicable {CalculmaxCharacteristicDimensionClass()} m
             </div>
           )
           }

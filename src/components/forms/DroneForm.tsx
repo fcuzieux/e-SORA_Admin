@@ -56,6 +56,45 @@ const FilePreview = ({ file }: { file: File | FileMetadata }) => {
 export function DroneForm({ drone, onChange }: DroneFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showTechnicalRequirements, setShowTechnicalRequirements] = useState(false);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+
+  // Charger les fichiers depuis les URLs lors du chargement initial
+  useEffect(() => {
+    const loadFilesFromUrls = async () => {
+      if (!drone.technicalDocumentUrls || drone.technicalDocumentUrls.length === 0) {
+        return;
+      }
+
+      // Ne charger que si le nombre de fichiers ne correspond pas au nombre d'URLs
+      const currentFileCount = drone.technicalDocuments?.length || 0;
+      if (currentFileCount === drone.technicalDocumentUrls.length) {
+        return;
+      }
+
+      setLoadingFiles(true);
+      try {
+        const { urlToFile } = await import('../../lib/storageService');
+
+        const filePromises = drone.technicalDocumentUrls.map((url, index) => {
+          const fileName = url.split('/').pop() || `file_${index}`;
+          return urlToFile(url, fileName);
+        });
+
+        const files = await Promise.all(filePromises);
+        const validFiles = files.filter((file): file is File => file !== null);
+
+        if (validFiles.length > 0) {
+          onChange({ ...drone, technicalDocuments: validFiles });
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement des fichiers:', error);
+      } finally {
+        setLoadingFiles(false);
+      }
+    };
+
+    loadFilesFromUrls();
+  }, [drone.technicalDocumentUrls]); // Dépendance uniquement sur les URLs
 
   const errors = useMemo(() => ({
     manufacturer: !drone.manufacturer.trim(),
@@ -253,7 +292,9 @@ export function DroneForm({ drone, onChange }: DroneFormProps) {
             >
               <Upload className="w-5 h-5 text-gray-400" />
               <span className="text-gray-600">
-                Télécharger des fichiers image(.png, .jpg, .jpeg) ici ou cliquer pour parcourir (taille limite de 500 Ko)
+                {loadingFiles
+                  ? 'Chargement des fichiers...'
+                  : 'Télécharger des fichiers image(.png, .jpg, .jpeg) ici ou cliquer pour parcourir (taille limite de 500 Ko)'}
               </span>
             </div>
           </div>

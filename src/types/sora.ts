@@ -59,6 +59,7 @@ export type assessmentTypeHauteurVol =
 export type iGRC = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8';
 export type GRC_Final = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8';
 export type assessmentCriticalArea =
+  | 'Selon les Tables SORA'
   | 'Calcul selon les Modèles JARUS'
   | 'Spécifiée par le déposant';
 export type assessmentiGRC =
